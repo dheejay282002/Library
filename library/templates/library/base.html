@@ -3,133 +3,446 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Library Management System{% endblock %}</title>
+    <title>{% block title %}{{ system_settings.system_name }}{% endblock %}</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/loading.css' %}">
+
+    {% if system_settings.system_logo %}
+        <link rel="icon" type="image/png" href="{{ system_settings.system_logo.url }}">
+    {% else %}
+        <link rel="icon" type="image/png" href="{% static 'images/default_logo.png' %}">
+    {% endif %}
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="loading-spinner">
-            <div class="spinner"></div>
-            <div class="loading-text" id="loading-text">Loading...</div>
-            <div class="loading-subtext loading-pulse" id="loading-subtext">Please wait</div>
+<body class="bg-gray-90 min-h-screen flex flex-col">
+
+<style>
+
+/* Flash animation */
+@keyframes flash {
+  0%   { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+/* Apply visuals to logout link */
+.logout-link {
+  animation: shake 1s infinite ease-in-out;
+  position: relative;
+  z-index: 5;
+}
+
+/* Flashing glow behind logout */
+.logout-link::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  animation: flash 1s infinite alternate;
+  z-index: -1;
+}
+
+/* Your existing faint page overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: -1;
+}
+
+</style>
+
+</head>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">Loading...</div>
+        <div class="loading-subtext loading-pulse" id="loading-subtext">Please wait</div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<nav class="bg-green-900 text-white shadow-lg fixed w-full z-50 transition-transform duration-300"
+     x-data="{ mobileMenuOpen: false, lastScroll: 0, hidden: false }"
+     x-init="
+        if('{{ user.user_type }}' === 'pos') {
+            window.addEventListener('scroll', () => {
+                let currentScroll = window.pageYOffset;
+                hidden = currentScroll > lastScroll && currentScroll > 100;
+                lastScroll = currentScroll;
+            });
+        }
+     "
+     :class="{ '-translate-y-full': hidden && '{{ user.user_type }}' === 'pos' }">
+
+    <!-- Top container with logo and menu button -->
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between relative z-10">
+
+<div class="flex items-center space-x-3">
+    <a href="{% if user.user_type == 'student' %}{% url 'student_dashboard' %}
+             {% elif user.user_type == 'admin' %}{% url 'admin_dashboard' %}
+             {% elif user.user_type == 'librarian' %}{% url 'librarian_dashboard' %}{% endif %}"
+       class="flex items-center space-x-3 hover:scale-105 transition-transform duration-200">
+
+        {% if system_settings.system_logo %}
+            <img src="{{ system_settings.system_logo.url }}" alt="Logo" class="h-11 w-11 object-contain">
+        {% else %}
+            <i class="fas fa-book text-2xl"></i>
+        {% endif %}
+
+        <div class="flex flex-col leading-tight">
+            <span class="text-xl font-bold">
+                {{ system_settings.system_name|default:"Library System" }}
+            </span>
+
+            {% if system_settings.system_tagline %}
+                <span class="text-sm text-gray-200 font-italic" style="font-family: 'Poppins', sans-serif;">
+                    {{ system_settings.system_tagline }}
+                </span>
+            {% endif %}
         </div>
+
+    </a>
+</div>
+
+
+
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center space-x-6">
+            {% if user.user_type == 'student' %}
+                <a href="{% url 'student_dashboard' %}" class="hover:text-blue-200 transition"><i class="fas fa-home mr-2"></i></a>
+                <a href="{% url 'student_books' %}" class="hover:text-blue-200 transition"><i class="fas fa-book mr-2"></i></a>
+                <a href="{% url 'student_settings' %}" class="hover:text-blue-200 transition"><i class="fas fa-user-tie mr-2"></i></a>
+            {% elif user.user_type == 'admin' %}
+                <a href="{% url 'admin_dashboard' %}" class="hover:text-blue-200 transition"><i class="fas fa-home mr-2"></i></a>
+                <a href="{% url 'manage_books' %}" class="hover:text-blue-200 transition"><i class="fas fa-book mr-2"></i></a>
+                <a href="{% url 'manage_students' %}" class="hover:text-blue-200 transition"><i class="fas fa-users mr-2"></i></a>
+                <a href="{% url 'manage_librarians' %}" class="hover:text-blue-200 transition"><i class="fas fa-user-tie mr-2"></i></a>
+                <a href="{% url 'manage_pos' %}" class="hover:text-blue-200 transition"><i class="fas fa-cash-register mr-2"></i></a>
+                <a href="{% url 'admin_settings' %}" class="hover:text-blue-200 transition"><i class="fas fa-cog mr-2"></i></a>
+                {% elif user.user_type == 'librarian' %}
+                    <a href="{% url 'librarian_dashboard' %}" class="hover:text-blue-200 transition"><i class="fas fa-home mr-2"></i></a>
+                    <a href="{% url 'manage_books' %}" class="hover:text-blue-200 transition"><i class="fas fa-book mr-2"></i></a>
+                    <a href="{% url 'manage_students' %}" class="hover:text-blue-200 transition"><i class="fas fa-users mr-2"></i></a>
+                    <a href="{% url 'library_status' %}" class="hover:text-blue-200 transition"><i class="fas fa-building mr-2"></i></a>
+                    <a href="{% url 'pending_transactions' %}" class="hover:text-blue-200 transition"><i class="fas fa-clock mr-2"></i></a>
+
+                    <!-- Added POS Home -->
+                    <a href="{% url 'pos_home' %}" class="hover:text-blue-200 transition">
+                        <i class="fas fa-cash-register mr-2"></i>
+                    </a>
+                {% endif %}
+
+            <a href="{% url 'logout' %}" class="hover:text-blue-200 transition logout-link">
+                <i class="fas fa-sign-out-alt mr-2"></i>
+            </a>
+        </div>
+
+        <!-- Mobile Hamburger Button -->
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-white focus:outline-none">
+            <i class="fas text-2xl" :class="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
+        </button>
     </div>
 
-    {% if user.is_authenticated %}
-    <nav class="bg-blue-600 text-white shadow-lg fixed w-full z-50 transition-transform duration-300"
-         x-data="{ mobileMenuOpen: false, lastScroll: 0, hidden: false }"
-         x-init="
-            if('{{ user.user_type }}' === 'pos') {
-                window.addEventListener('scroll', () => {
-                    let currentScroll = window.pageYOffset;
-                    hidden = currentScroll > lastScroll && currentScroll > 100;
-                    lastScroll = currentScroll;
-                });
-            }
-         "
-         :class="{ '-translate-y-full': hidden && '{{ user.user_type }}' === 'pos' }">
-        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <!-- Logo -->
-            <div class="flex items-center space-x-3">
-                {% if system_settings.system_logo %}
-                    <img src="{{ system_settings.system_logo.url }}" alt="Logo" class="h-8 w-8 object-contain">
-                {% else %}
-                    <i class="fas fa-book text-2xl"></i>
-                {% endif %}
-                <span class="text-xl font-bold">{{ system_settings.system_name|default:"Library System" }}</span>
-            </div>
-            
-            <!-- Desktop Menu -->
-            <div class="hidden md:flex items-center space-x-6">
-                {% if user.user_type == 'student' %}
-                    <a href="{% url 'student_dashboard' %}" class="hover:text-blue-200 transition"><i class="fas fa-home mr-2"></i>Dashboard</a>
-                    <a href="{% url 'student_books' %}" class="hover:text-blue-200 transition"><i class="fas fa-book mr-2"></i>Books</a>
-                    <a href="{% url 'student_settings' %}" class="hover:text-blue-200 transition"><i class="fas fa-cog mr-2"></i>Settings</a>
-                {% elif user.user_type == 'admin' %}
-                    <a href="{% url 'admin_dashboard' %}" class="hover:text-blue-200 transition"><i class="fas fa-home mr-2"></i>Dashboard</a>
-                    <a href="{% url 'manage_books' %}" class="hover:text-blue-200 transition"><i class="fas fa-book mr-2"></i>Books</a>
-                    <a href="{% url 'manage_students' %}" class="hover:text-blue-200 transition"><i class="fas fa-users mr-2"></i>Students</a>
-                    <a href="{% url 'manage_librarians' %}" class="hover:text-blue-200 transition"><i class="fas fa-user-tie mr-2"></i>Librarians</a>
-                    <a href="{% url 'manage_pos' %}" class="hover:text-blue-200 transition"><i class="fas fa-cash-register mr-2"></i>POS</a>
-                    <a href="{% url 'admin_logs' %}" class="hover:text-blue-200 transition"><i class="fas fa-clipboard-list mr-2"></i>Logs</a>
-                    <a href="{% url 'admin_settings' %}" class="hover:text-blue-200 transition"><i class="fas fa-cog mr-2"></i>Settings</a>
-                {% elif user.user_type == 'librarian' %}
-                    <a href="{% url 'librarian_dashboard' %}" class="hover:text-blue-200 transition"><i class="fas fa-home mr-2"></i>Dashboard</a>
-                    <a href="{% url 'manage_books' %}" class="hover:text-blue-200 transition"><i class="fas fa-book mr-2"></i>Books</a>
-                    <a href="{% url 'manage_students' %}" class="hover:text-blue-200 transition"><i class="fas fa-users mr-2"></i>Students</a>
-                    <a href="{% url 'pending_transactions' %}" class="hover:text-blue-200 transition"><i class="fas fa-clock mr-2"></i>Pending</a>
-                {% elif user.user_type == 'pos' %}
-                    <a href="{% url 'pos_home' %}" class="hover:text-blue-200 transition"><i class="fas fa-home mr-2"></i>Home</a>
-                {% endif %}
-                <a href="{% url 'logout' %}" class="hover:text-blue-200 transition"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
-            </div>
+    <!-- Thin yellow-green accent line -->
+    <div class="h-0.5 w-full bg-yellow-500 absolute bottom-0 left-0 z-20"></div>
 
-            <!-- Mobile Hamburger Button -->
-            <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-white focus:outline-none">
-                <i class="fas text-2xl" :class="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
-            </button>
+    <!-- Mobile Menu -->
+    <div x-show="mobileMenuOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="md:hidden mt-4 pb-2 relative z-10">
+        <div class="flex flex-col space-y-2">
+            {% if user.user_type == 'student' %}
+                <a href="{% url 'student_dashboard' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Dashboard</a>
+                <a href="{% url 'student_books' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Books</a>
+                <a href="{% url 'student_settings' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Profile</a>
+            {% elif user.user_type == 'admin' %}
+                <a href="{% url 'admin_dashboard' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Dashboard</a>
+                <a href="{% url 'manage_books' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Books</a>
+                <a href="{% url 'manage_students' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Students</a>
+                <a href="{% url 'manage_librarians' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Librarians</a>
+                <a href="{% url 'manage_pos' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">POS</a>
+                <a href="{% url 'admin_settings' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Settings</a>
+            {% elif user.user_type == 'librarian' %}
+                <a href="{% url 'librarian_dashboard' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Dashboard</a>
+                <a href="{% url 'manage_books' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Books</a>
+                <a href="{% url 'manage_students' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Students</a>
+                <a href="{% url 'library_status' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Library Status</a>
+                <a href="{% url 'pending_transactions' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition">Pending</a>
+            {% endif %}
+        <a href="{% url 'logout' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition logout-link">
+            Logout
+        </a>
         </div>
-
-        <!-- Mobile Menu -->
-        <div x-show="mobileMenuOpen" 
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 transform scale-95"
-             x-transition:enter-end="opacity-100 transform scale-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 transform scale-100"
-             x-transition:leave-end="opacity-0 transform scale-95"
-             class="md:hidden mt-4 pb-2">
-            <div class="flex flex-col space-y-2">
-                {% if user.user_type == 'student' %}
-                    <a href="{% url 'student_dashboard' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-home mr-2"></i>Dashboard</a>
-                    <a href="{% url 'student_books' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-book mr-2"></i>Books</a>
-                    <a href="{% url 'student_settings' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-cog mr-2"></i>Settings</a>
-                {% elif user.user_type == 'admin' %}
-                    <a href="{% url 'admin_dashboard' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-home mr-2"></i>Dashboard</a>
-                    <a href="{% url 'manage_books' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-book mr-2"></i>Books</a>
-                    <a href="{% url 'manage_students' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-users mr-2"></i>Students</a>
-                    <a href="{% url 'manage_librarians' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-user-tie mr-2"></i>Librarians</a>
-                    <a href="{% url 'manage_pos' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-cash-register mr-2"></i>POS</a>
-                    <a href="{% url 'admin_logs' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-clipboard-list mr-2"></i>Logs</a>
-                    <a href="{% url 'admin_settings' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-cog mr-2"></i>Settings</a>
-                {% elif user.user_type == 'librarian' %}
-                    <a href="{% url 'librarian_dashboard' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-home mr-2"></i>Dashboard</a>
-                    <a href="{% url 'manage_books' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-book mr-2"></i>Books</a>
-                    <a href="{% url 'manage_students' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-users mr-2"></i>Students</a>
-                    <a href="{% url 'pending_transactions' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-clock mr-2"></i>Pending</a>
-                {% elif user.user_type == 'pos' %}
-                    <a href="{% url 'pos_home' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-home mr-2"></i>Home</a>
-                {% endif %}
-                <a href="{% url 'logout' %}" class="hover:bg-blue-700 px-4 py-2 rounded transition"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
-            </div>
-        </div>
-    </nav>
+    </div>
+</nav>
     {% endif %}
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-4 md:py-8 flex-1 mt-20">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-4 p-3 md:p-4 rounded-lg text-sm md:text-base {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-        
-        {% block content %}{% endblock %}
-    </main>
+<!-- Main Content -->
+<main class="container mx-auto px-4 py-4 md:py-8 flex-1 mt-20 glass">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-3 md:p-4 rounded-lg text-sm md:text-base {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% block content %}{% endblock %}
+</main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white text-center py-4 text-sm md:text-base mt-auto">
-        <p>&copy; 2025 {{ system_settings.system_name|default:"Library Management System" }}. All rights reserved.</p>
+<!-- Footer -->
+<footer class="bg-gray-900 text-white text-center py-4 text-sm md:text-base mt-auto">
+    <p>&copy; 2025 {{ system_settings.system_name|default:"Library Management System" }} Digital Library. All rights reserved.</p>
+</footer>
+<!-- Developer Info Modal (with Contact Form + Success Message) -->
+<div x-data="{ open: false, page: 'members', success: false, error: false }" class="fixed bottom-4 right-4 z-50">
+
+    <!-- Floating Icon -->
+    <button @click="open = true"
+        class="rounded-full p-0.1 hover:bg-green-900 transition"
+        title="View Developer Team">
+        <img src="{% static 'images/1.jpeg' %}" 
+            alt="Developer Team" 
+            class="w-10 h-10 rounded-full object-cover">
+    </button>
+
+    <!-- Modal Background -->
+    <div x-show="open"
+         x-transition
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm"
+         @click.self="open = false">
+
+        <!-- Modal Content -->
+        <div class="glass bg-black/50 text-white rounded-2xl shadow-2xl w-full max-w-lg h-[520px] p-6 relative overflow-hidden flex flex-col">
+
+            <!-- Close Button -->
+            <button @click="open = false"
+                class="absolute top-3 right-3 text-white hover:text-gray-300">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <!-- Navigation Tabs -->
+            <div class="flex justify-center space-x-6 mb-4 border-b border-gray-600 pb-2">
+                <button @click="page = 'members'"
+                    :class="page === 'members' ? 'text-blue-400 font-semibold border-b-2 border-blue-400' : 'text-gray-300'"
+                    class="pb-1 transition">Members</button>
+                <button @click="page = 'about'"
+                    :class="page === 'about' ? 'text-blue-400 font-semibold border-b-2 border-blue-400' : 'text-gray-300'"
+                    class="pb-1 transition">About</button>
+                <button @click="page = 'contact'; success = false; error = false;"
+                    :class="page === 'contact' ? 'text-blue-400 font-semibold border-b-2 border-blue-400' : 'text-gray-300'"
+                    class="pb-1 transition">Contact</button>
+            </div>
+
+            <!-- CONTENT AREA -->
+            <div class="relative flex-1 overflow-hidden">
+
+                <!-- MEMBERS PAGE -->
+                <div
+                    x-show="page === 'members'"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-200 absolute inset-0"
+                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                    class="absolute inset-0 overflow-y-auto pr-2">
+
+                    <h2 class="text-2xl font-bold text-center text-white mb-6">Developer Team</h2>
+
+                    <div class="text-center mb-8">
+                        <img src="{% static 'images/pic.jpeg' %}"
+                             alt="Team Leader"
+                             class="w-20 h-20 mx-auto rounded-full shadow-lg border border-gray-600">
+                        <h3 class="font-semibold text-lg text-white mt-2">Dee Jay</h3>
+                        <p class="text-sm text-gray-300">System Architect & Backend Developer</p>
+                    </div>
+
+                    <hr class="my-6 border-gray-600">
+
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <template x-for="member in [
+                            {name: 'Vrenelli', role: 'Frontend & UI Design', img: '{% static 'images/vren.jpeg' %}'},
+                            {name: 'Ken Mark', role: 'Database & Logic', img: '{% static 'images/ken.jpeg' %}'},
+                            {name: 'Kristel', role: 'Testing & QA', img: '{% static 'images/kristel.jpeg' %}'},
+                        ]" :key="member.name">
+                            <div>
+                                <img :src="member.img"
+                                     class="w-16 h-16 mx-auto rounded-full shadow border border-gray-600">
+                                <h4 class="font-semibold text-white mt-2" x-text="member.name"></h4>
+                                <p class="text-xs text-gray-300" x-text="member.role"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ABOUT PAGE -->
+                <div
+                    x-show="page === 'about'"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-200 absolute inset-0"
+                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                    class="absolute inset-0 overflow-y-auto pr-2 p-6">
+
+                    {% if system_settings.system_logo %}
+                        <div class="flex justify-center mb-4">
+                            <img src="{{ system_settings.system_logo.url }}" alt="{{ system_settings.system_name }}" class="h-20 sm:h-24 object-contain">
+                        </div>
+                    {% endif %}
+
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">About This System</h2>
+
+                    <p class="text-gray-300 text-sm leading-relaxed text-justify mb-3">
+                        This {{ system_settings.system_name }} was crafted to streamline book borrowing, tracking, and user management. Built with Django, TailwindCSS, and a deep love for efficient design.
+                    </p>
+
+                    <p class="text-gray-300 text-sm leading-relaxed text-justify mb-3">
+                        Every feature was designed collaboratively by our developer team, emphasizing simplicity, usability, and modern aesthetics.
+                    </p>
+
+                    <p class="text-center text-sm text-gray-400 mt-4 italic">
+                        “A system built by students, for students — powered by curiosity and caffeine.”
+                    </p>
+                </div>
+
+                <!-- CONTACT PAGE -->
+                <div
+                    x-show="page === 'contact'"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-200 absolute inset-0"
+                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                    class="absolute inset-0 overflow-y-auto pr-2 p-6">
+
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">Contact Us</h2>
+                    <p class="text-gray-300 text-sm text-center mb-6">
+                        Have a suggestion or found a bug? We’d love to hear from you!
+                    </p>
+
+                    <!-- SUCCESS & ERROR MESSAGES -->
+                    <template x-if="success">
+                        <div class="bg-green-700 bg-opacity-40 text-green-100 p-3 rounded-lg text-center mb-4">
+                            ✅ Message sent successfully!
+                        </div>
+                    </template>
+                    <template x-if="error">
+                        <div class="bg-red-700 bg-opacity-40 text-red-100 p-3 rounded-lg text-center mb-4">
+                            ❌ Something went wrong. Please try again.
+                        </div>
+                    </template>
+
+                    <!-- CONTACT FORM -->
+                    <form 
+                        x-ref="form"
+                        @submit.prevent="
+                            fetch('https://formspree.io/f/mzzkppee', {
+                                method: 'POST',
+                                headers: { 'Accept': 'application/json' },
+                                body: new FormData($refs.form)
+                            }).then(response => {
+                                if (response.ok) {
+                                    success = true;
+                                    error = false;
+                                    $refs.form.reset();
+                                } else {
+                                    success = false;
+                                    error = true;
+                                }
+                            }).catch(() => {
+                                success = false;
+                                error = true;
+                            });
+                        "
+                        class="space-y-4 max-w-md mx-auto"
+                    >
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Your email</label>
+                            <input 
+                                type="email" 
+                                name="email" 
+                                required
+                                class="w-full border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black/30 text-white placeholder-gray-400"
+                                placeholder="Enter your email"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Your message</label>
+                            <textarea 
+                                name="message" 
+                                rows="4" 
+                                required
+                                class="w-full border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black/30 text-white placeholder-gray-400"
+                                placeholder="Type your message..."
+                            ></textarea>
+                        </div>
+
+<div class="flex justify-center">
+    <button 
+        type="submit"
+        class="w-1/2 bg-blue-600 bg-opacity-70 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition"
+    >
+        <i class="fas fa-paper-plane mr-2"></i>Send Message
+    </button>
+</div>
+                    </form>
+
+                    <p class="text-center text-sm text-gray-400 mt-6 italic">
+                        “Your feedback helps us grow smarter.”
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
     </footer>
     
     <script src="{% static 'js/loading.js' %}"></script>
     {% block extra_js %}{% endblock %}
+
+    <script>
+document.querySelectorAll('.logout-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        // Show loading overlay
+        document.getElementById('loading-overlay').style.display = 'flex';
+    });
+});
+</script>
+
 </body>
 </html>
+
+
+
+<!--This system is... ehhh??? 
+haeup hirap magpuyat, tapos sasabihin, pinagawa noh? basta this system is made with 50% of HAte, 25% of Lust and 25% of love!-->

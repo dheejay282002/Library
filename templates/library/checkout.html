@@ -1,0 +1,10 @@
+{% extends 'library/base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10 text-center">
+    <h1 class="text-2xl font-bold mb-6">Checkout</h1>
+    <p>Thank you for your purchase! 🛒</p>
+    <a href="{% url 'student_books' %}" class="mt-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        Continue Shopping
+    </a>
+</div>
+{% endblock %}

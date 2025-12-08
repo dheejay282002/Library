@@ -1,0 +1,22 @@
+{% extends 'library/base.html' %}
+{% block title %}Gcash Payment{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-10 bg-white p-6 rounded-lg shadow-lg text-center">
+    <h1 class="text-2xl font-bold mb-4">Gcash Payment</h1>
+    <p class="mb-2">Order ID: <strong>{{ order.id }}</strong></p>
+    <p class="mb-2">Total: <strong>₱{{ order.total_price|floatformat:2 }}</strong></p>
+    <p class="mb-4">Please review your order and click "Pay Now" to complete the transaction via Gcash.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 text-lg">
+            Pay Now
+        </button>
+    </form>
+    
+    <div class="mt-4 text-sm text-gray-500">
+        This is a mock payment page. In real implementation, you would redirect to Gcash API.
+    </div>
+</div>
+{% endblock %}

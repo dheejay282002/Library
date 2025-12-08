@@ -1,0 +1,277 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Manage POS - Library System{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6" x-data="posManager()">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">
+            <i class="fas fa-cash-register mr-2"></i>Manage POS Accounts
+        </h1>
+        <button @click="openCreateModal()" class="bg-blue-900 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition">
+            <i class="fas fa-plus mr-2"></i>Add POS
+        </button>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-100 border-b">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Photo</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Serial Number</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Username</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Created</th>
+                        <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pos in pos_accounts %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            {% if pos.profile_photo %}
+                            <img src="{{ pos.profile_photo.url }}" alt="{{ pos.name }}" class="w-12 h-12 rounded-full object-cover border-4 border-yellow-500">
+                            {% else %}
+                            <div class="w-12 h-12 rounded-full bg-green-800 flex items-center justify-center text-white font-bold text-lg">
+                                {{ pos.name|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-800">{{ pos.name }}</td>
+                        <td class="px-6 py-4 text-gray-600 font-mono">{{ pos.serial_number }}</td>
+                        <td class="px-6 py-4 text-gray-600">{{ pos.user.username }}</td>
+                        <td class="px-6 py-4 text-gray-600 text-sm">{{ pos.created_at|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center space-x-2">
+                                <button @click="openViewModal({{ pos.id }}, '{{ pos.name }}', '{{ pos.serial_number }}', '{{ pos.user.username }}', '{% if pos.profile_photo %}{{ pos.profile_photo.url }}{% endif %}', '{{ pos.created_at|date:"M d, Y" }}')" 
+                                        class="bg-green-800 hover:bg-green-900 text-white px-3 py-1 rounded text-sm transition">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <a href="{% url 'edit_pos' pos.id %}" 
+                                   class="bg-yellow-600 hover:bg-yellow-900 text-white px-3 py-1 rounded text-sm transition inline-block">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <button @click="openDeleteModal({{ pos.id }}, '{{ pos.name }}')" 
+                                        class="bg-red-700 hover:bg-red-900 text-white px-3 py-1 rounded text-sm transition">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            <i class="fas fa-cash-register text-4xl mb-4 block"></i>
+                            <p class="text-lg">No POS accounts found</p>
+                            <p class="text-sm mt-2">Click "Add POS" to create one</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create POS Modal -->
+    <div x-show="showCreateModal" 
+         x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="closeCreateModal()">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+             @click.stop>
+            <div class="bg-purple-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                <h2 class="text-xl font-bold"><i class="fas fa-plus-circle mr-2"></i>Create POS Account</h2>
+                <button @click="closeCreateModal()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <form method="post" action="{% url 'add_pos' %}" enctype="multipart/form-data" class="p-6">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">POS Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="POS Station Name">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Serial Number <span class="text-red-500">*</span></label>
+                        <input type="text" name="serial_number" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="POS-001">
+                        <p class="text-xs text-gray-500 mt-1">Unique identifier for this POS terminal</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Username <span class="text-red-500">*</span></label>
+                        <input type="text" name="username" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="pos_username">
+                        <p class="text-xs text-gray-500 mt-1">Login username for this POS</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password <span class="text-red-500">*</span></label>
+                        <input type="password" name="password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Enter secure password">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Profile Photo <span class="text-gray-500">(Optional)</span></label>
+                        <input type="file" name="profile_photo" accept="image/*" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Upload a profile picture (JPG, PNG)</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                    <button type="button" @click="closeCreateModal()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition">
+                        <i class="fas fa-save mr-2"></i>Create POS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View POS Modal -->
+    <div x-show="showViewModal" 
+         x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="closeViewModal()">
+        <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full"
+             @click.stop>
+            <div class="bg-green-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                <h2 class="text-xl font-bold"><i class="fas fa-info-circle mr-2"></i>POS Details</h2>
+                <button @click="closeViewModal()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <div class="inline-block" x-show="viewData.photo">
+                        <img :src="viewData.photo" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-green-500 mx-auto">
+                    </div>
+                    <div class="inline-block" x-show="!viewData.photo">
+                        <div class="w-32 h-32 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-5xl mx-auto">
+                            <span x-text="viewData.name.charAt(0).toUpperCase()"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">POS Name</label>
+                        <p class="text-gray-800 text-lg" x-text="viewData.name"></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Serial Number</label>
+                        <p class="text-gray-800 font-mono" x-text="viewData.serial_number"></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+                        <p class="text-gray-800" x-text="viewData.username"></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Created Date</label>
+                        <p class="text-gray-800" x-text="viewData.created"></p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end mt-6 pt-4 border-t">
+                    <button @click="closeViewModal()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div x-show="showDeleteModal" 
+         x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="closeDeleteModal()">
+        <div class="bg-white rounded-lg shadow-2xl max-w-md w-full"
+             @click.stop>
+            <div class="bg-red-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                <h2 class="text-xl font-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Delete POS</h2>
+                <button @click="closeDeleteModal()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <i class="fas fa-trash-alt text-6xl text-red-500 mb-4"></i>
+                    <p class="text-lg text-gray-800">Are you sure you want to delete this POS account?</p>
+                    <p class="text-xl font-bold text-gray-900 mt-2" x-text="deleteData.name"></p>
+                    <p class="text-sm text-red-600 mt-4">This action cannot be undone!</p>
+                </div>
+                
+                <form :action="'/admin/pos/delete/' + deleteData.id + '/'" method="post">
+                    {% csrf_token %}
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" @click="closeDeleteModal()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition">
+                            <i class="fas fa-trash mr-2"></i>Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+
+<script>
+    function posManager() {
+        return {
+            showCreateModal: false,
+            showViewModal: false,
+            showDeleteModal: false,
+            viewData: {
+                id: null,
+                name: '',
+                serial_number: '',
+                username: '',
+                photo: '',
+                created: ''
+            },
+            deleteData: {
+                id: null,
+                name: ''
+            },
+            
+            openCreateModal() {
+                this.showCreateModal = true;
+            },
+            closeCreateModal() {
+                this.showCreateModal = false;
+            },
+            
+            openViewModal(id, name, serial_number, username, photo, created) {
+                this.viewData = { id, name, serial_number, username, photo, created };
+                this.showViewModal = true;
+            },
+            closeViewModal() {
+                this.showViewModal = false;
+            },
+            
+            openDeleteModal(id, name) {
+                this.deleteData = { id, name };
+                this.showDeleteModal = true;
+            },
+            closeDeleteModal() {
+                this.showDeleteModal = false;
+            }
+        }
+    }
+</script>
+{% endblock %}

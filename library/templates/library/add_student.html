@@ -1,6 +1,6 @@
 {% extends 'library/base.html' %}
 
-{% block title %}Add Student{% endblock %}
+{% block title %}Add Student - {{ system_settings.system_name|default:"Library System" }}{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
@@ -18,14 +18,28 @@
             </div>
         {% endfor %}
         
-        <div class="flex gap-4">
-            <button type="submit" class="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                <i class="fas fa-save mr-2"></i>Save Student
-            </button>
-            <a href="{% url 'manage_students' %}" class="flex-1 bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition font-semibold text-center">
-                <i class="fas fa-times mr-2"></i>Cancel
-            </a>
-        </div>
+<div class="flex justify-end items-center gap-4">
+
+    <!-- Cancel -->
+    <a href="{% url 'manage_students' %}"
+       class="inline-flex items-center justify-center gap-2
+              px-6 h-[44px] rounded-md font-semibold whitespace-nowrap
+              bg-gray-600 text-white hover:bg-gray-700 shadow-sm">
+        <i class="fas fa-times"></i>
+        Cancel
+    </a>
+
+    <!-- Save -->
+    <button type="submit"
+        class="inline-flex items-center justify-center gap-2
+               px-6 h-[44px] rounded-md font-semibold whitespace-nowrap
+               bg-green-600 text-white hover:bg-green-700 shadow-sm">
+        <i class="fas fa-save"></i>
+        Save Student
+    </button>
+
+</div>
+
     </form>
 </div>
 {% endblock %}

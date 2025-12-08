@@ -13,12 +13,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-@@mgs!#1koa1=zu%i2bk01fvv21u+rvg6@5n*&$o7)+ke36(5o'
 DEBUG = True
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.100.72', 'localhost', 'disproportional-jo-sternly.ngrok-free.dev']
 
 # CSRF Settings for Replit deployment
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.replit.dev',
-    'https://*.repl.co',
+    'https://disproportional-jo-sternly.ngrok-free.dev'
+
 ]
 
 # ---------------------------
@@ -34,11 +34,16 @@ INSTALLED_APPS = [
     'library',
     'crispy_forms',
     'crispy_tailwind',
+    'widget_tweaks',
+    
 ]
 
 # Crispy Forms template pack
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-CRISPY_TEMPLATE_PACK = "bootstrap5"
+#CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+#CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
+
 
 
 # ---------------------------
@@ -70,7 +75,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
-                'library.context_processors.system_settings',
+                'library.context_processors.system_settings_context',  # 👈 add this
+
             ],
         },
     },
@@ -82,13 +88,19 @@ WSGI_APPLICATION = 'library_system.wsgi.application'
 # DATABASE
 # ---------------------------
 DATABASES = {
-    'default': {
+    'default': {  # MariaDB
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'library',
+        'USER': 'root',
+        'PASSWORD': '0123456789',
+        'HOST': 'localhost',
+        'PORT': '7970',
+    },
+    'sqlite': {  # Optional SQLite backup
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
-
 
 # ---------------------------
 # PASSWORD VALIDATION
@@ -99,8 +111,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        'NAME':
-        'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 8},  # Enforces minimum 8 characters
     },
     {
         'NAME':
@@ -157,8 +169,8 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'deejay.cristobal_cyn@isu.edu.ph')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'gxht wrel hrhc upvt')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 

@@ -8,7 +8,7 @@
         <h1 class="text-3xl font-bold text-gray-800">
             <i class="fas fa-user-tie mr-2"></i>Manage Librarians
         </h1>
-        <button @click="openCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition">
+        <button @click="openCreateModal()" class="bg-blue-900 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition">
             <i class="fas fa-plus mr-2"></i>Add Librarian
         </button>
     </div>
@@ -31,9 +31,9 @@
                     <tr class="border-b hover:bg-gray-50">
                         <td class="px-6 py-4">
                             {% if librarian.profile_photo %}
-                            <img src="{{ librarian.profile_photo.url }}" alt="{{ librarian.name }}" class="w-12 h-12 rounded-full object-cover border-2 border-blue-500">
+                            <img src="{{ librarian.profile_photo.url }}" alt="{{ librarian.name }}" class="w-12 h-12 rounded-full object-cover">
                             {% else %}
-                            <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg">
                                 {{ librarian.name|slice:":1"|upper }}
                             </div>
                             {% endif %}
@@ -42,21 +42,23 @@
                         <td class="px-6 py-4 text-gray-600">{{ librarian.user.username }}</td>
                         <td class="px-6 py-4 text-gray-600">{{ librarian.email }}</td>
                         <td class="px-6 py-4 text-gray-600 text-sm">{{ librarian.created_at|date:"M d, Y" }}</td>
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex justify-center space-x-2">
-                                <button @click="openViewModal({{ librarian.id }}, '{{ librarian.name }}', '{{ librarian.user.username }}', '{{ librarian.email }}', '{% if librarian.profile_photo %}{{ librarian.profile_photo.url }}{% endif %}', '{{ librarian.created_at|date:"M d, Y" }}')" 
-                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                                <a href="{% url 'edit_librarian' librarian.id %}" 
-                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition inline-block">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                                <button @click="openDeleteModal({{ librarian.id }}, '{{ librarian.name }}')" 
-                                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
+                                                <td class="px-6 py-4 text-center"><div class="flex justify-center items-center space-x-1">
+    <button 
+        @click="openViewModal({{ librarian.id }}, '{{ librarian.name }}', '{{ librarian.user.username }}', '{{ librarian.email }}', '{% if librarian.profile_photo %}{{ librarian.profile_photo.url }}{% endif %}', '{{ librarian.created_at|date:"M d, Y" }}')"
+        class="bg-green-900 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition">
+        <i class="fas fa-eye"></i> View
+    </button>
+    <a 
+        href="{% url 'edit_librarian' librarian.id %}"
+        class="bg-yellow-700 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition inline-block">
+        <i class="fas fa-edit"></i> Edit
+    </a>
+    <button 
+        @click="openDeleteModal({{ librarian.id }}, '{{ librarian.name }}')"
+        class="bg-red-900 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition">
+        <i class="fas fa-trash"></i> Delete
+    </button>
+</div>
                         </td>
                     </tr>
                     {% empty %}
@@ -80,7 +82,7 @@
          @click.self="closeCreateModal()">
         <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
              @click.stop>
-            <div class="bg-blue-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+            <div class="bg-green-900 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
                 <h2 class="text-xl font-bold"><i class="fas fa-user-plus mr-2"></i>Create Librarian Account</h2>
                 <button @click="closeCreateModal()" class="text-white hover:text-gray-200">
                     <i class="fas fa-times text-2xl"></i>
@@ -122,7 +124,7 @@
                     <button type="button" @click="closeCreateModal()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold transition">
                         Cancel
                     </button>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
+                    <button type="submit" class="px-6 py-2 bg-green-900 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
                         <i class="fas fa-save mr-2"></i>Create Librarian
                     </button>
                 </div>
@@ -130,62 +132,72 @@
         </div>
     </div>
 
-    <!-- View Librarian Modal -->
-    <div x-show="showViewModal" 
-         x-cloak
-         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-         @click.self="closeViewModal()">
-        <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full"
-             @click.stop>
-            <div class="bg-green-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                <h2 class="text-xl font-bold"><i class="fas fa-info-circle mr-2"></i>Librarian Details</h2>
-                <button @click="closeViewModal()" class="text-white hover:text-gray-200">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
+<!-- View Librarian Modal as Grid Form -->
+<div x-show="showViewModal" 
+     x-cloak
+     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+     @click.self="closeViewModal()">
+    <div class="bg-white rounded-lg shadow-2xl max-w-xl w-full"
+         @click.stop>
+        <div class="bg-green-900 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+            <h2 class="text-xl font-bold"><i class="fas fa-info-circle mr-2"></i>Librarian Details</h2>
+            <button @click="closeViewModal()" class="text-white hover:text-gray-200">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+        
+        <div class="p-6 space-y-6">
+            <div class="text-center mb-6">
+                <div class="inline-block" x-show="viewData.photo">
+                    <img :src="viewData.photo" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-green-500 mx-auto">
+                </div>
+                <div class="inline-block" x-show="!viewData.photo">
+                    <div class="w-32 h-32 rounded-full bg-green-900 flex items-center justify-center text-white font-bold text-5xl mx-auto">
+                        <span x-text="viewData.name.charAt(0).toUpperCase()"></span>
+                    </div>
+                </div>
             </div>
-            
-            <div class="p-6">
-                <div class="text-center mb-6">
-                    <div class="inline-block" x-show="viewData.photo">
-                        <img :src="viewData.photo" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-green-500 mx-auto">
-                    </div>
-                    <div class="inline-block" x-show="!viewData.photo">
-                        <div class="w-32 h-32 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-5xl mx-auto">
-                            <span x-text="viewData.name.charAt(0).toUpperCase()"></span>
-                        </div>
-                    </div>
+
+            <!-- Grid Form -->
+            <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+                    <input type="text" readonly 
+                           :value="viewData.name" 
+                           class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-800">
                 </div>
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Name</label>
-                        <p class="text-gray-800 text-lg" x-text="viewData.name"></p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
-                        <p class="text-gray-800" x-text="viewData.username"></p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                        <p class="text-gray-800" x-text="viewData.email"></p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Joined Date</label>
-                        <p class="text-gray-800" x-text="viewData.joined"></p>
-                    </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+                    <input type="text" readonly 
+                           :value="viewData.username" 
+                           class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-800">
                 </div>
-                
-                <div class="flex justify-end mt-6 pt-4 border-t">
-                    <button @click="closeViewModal()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold transition">
-                        Close
-                    </button>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                    <input type="text" readonly 
+                           :value="viewData.email" 
+                           class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-800">
                 </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Joined Date</label>
+                    <input type="text" readonly 
+                           :value="viewData.joined" 
+                           class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-800">
+                </div>
+            </form>
+
+            <div class="flex justify-end mt-6 pt-4 border-t">
+                <button @click="closeViewModal()" 
+                        class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold transition">
+                    Close
+                </button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Delete Confirmation Modal -->
     <div x-show="showDeleteModal" 

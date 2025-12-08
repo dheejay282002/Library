@@ -1,0 +1,81 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Return Success{% endblock %}
+
+{% block content %}
+<div id="return-success" class="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
+    <div class="text-center mb-6">
+        <i class="fas fa-check-circle text-6xl text-green-600 mb-4"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Return Successful!</h1>
+        {% if all_returned %}
+            <p class="text-green-600 font-semibold mt-2">All books have been returned</p>
+        {% else %}
+            <p class="text-blue-600 font-semibold mt-2">Partial return completed</p>
+        {% endif %}
+    </div>
+    
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+        <h3 class="font-semibold text-gray-800 mb-4">Return Receipt</h3>
+        <div class="space-y-2 mb-4">
+            <p><strong>Student:</strong> {{ student.get_full_name }}</p>
+            <p><strong>Student ID:</strong> {{ student.student_id }}</p>
+            <p><strong>Transaction Code:</strong> <span class="font-mono bg-gray-200 px-2 py-1 rounded">{{ transaction.transaction_code }}</span></p>
+            <p><strong>Return Date:</strong> {{ returned_items.0.return_date|date:"Y-m-d H:i" }}</p>
+        </div>
+        
+        <div class="border-t border-gray-300 pt-4">
+            <h4 class="font-semibold mb-3 text-green-700"><i class="fas fa-check-circle mr-2"></i>Books Returned ({{ returned_items|length }}):</h4>
+            {% if returned_items %}
+                {% for item in returned_items %}
+                    <div class="border-l-4 border-green-600 bg-green-50 pl-4 py-3 mb-3 rounded">
+                        <p class="font-semibold text-gray-800">{{ item.book.title }}</p>
+                        <p class="text-sm text-gray-600">ISBN: {{ item.book.isbn }}</p>
+                        <p class="text-sm text-gray-600">Author: {{ item.book.author }}</p>
+                        <p class="text-xs text-green-700 mt-1">
+                            <i class="fas fa-calendar-alt mr-1"></i>Borrowed: {{ item.borrowed_date|date:"Y-m-d H:i" }} | 
+                            <i class="fas fa-undo-alt mr-1"></i>Returned: {{ item.return_date|date:"Y-m-d H:i" }}
+                        </p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-500">No books were returned in this transaction.</p>
+            {% endif %}
+        </div>
+        
+        {% if unreturned_items %}
+            <div class="border-t border-gray-300 pt-4 mt-4">
+                <h4 class="font-semibold mb-3 text-orange-700"><i class="fas fa-exclamation-triangle mr-2"></i>Books Still Borrowed ({{ unreturned_items|length }}):</h4>
+                {% for item in unreturned_items %}
+                    <div class="border-l-4 border-orange-500 bg-orange-50 pl-4 py-3 mb-3 rounded">
+                        <p class="font-semibold text-gray-800">{{ item.book.title }}</p>
+                        <p class="text-sm text-gray-600">ISBN: {{ item.book.isbn }}</p>
+                        <p class="text-sm text-gray-600">Author: {{ item.book.author }}</p>
+                        <p class="text-xs text-orange-700 mt-1">
+                            <i class="fas fa-calendar-alt mr-1"></i>Borrowed: {{ item.borrowed_date|date:"Y-m-d H:i" }} | 
+                            <i class="fas fa-clock mr-1"></i>Due: {{ transaction.due_date|date:"Y-m-d" }}
+                        </p>
+                    </div>
+                {% endfor %}
+                <div class="bg-orange-100 border-l-4 border-orange-500 p-3 mt-3">
+                    <p class="text-sm text-orange-800"><i class="fas fa-info-circle mr-1"></i>The student still has {{ unreturned_items|length }} book(s) to return. Use transaction code <strong>{{ transaction.transaction_code }}</strong> for future returns.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="flex gap-4">
+        <a href="{% url 'pos_return_book' %}" class="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold text-center">
+            <i class="fas fa-undo-alt mr-2"></i>Return More Books
+        </a>
+        <a href="{% url 'pos_home' %}" class="flex-1 bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition font-semibold text-center">
+            <i class="fas fa-home mr-2"></i>Back to Home
+        </a>
+    </div>
+</div>
+
+<script>
+    setTimeout(function() {
+        window.location.href = "{% url 'pos_home' %}";
+    }, 8000);
+</script>
+{% endblock %}

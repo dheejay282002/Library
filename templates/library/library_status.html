@@ -1,0 +1,70 @@
+{% extends 'library/base.html' %}
+{% block title %}Library Status{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto space-y-6">
+
+    <!-- DYNAMIC CURRENT LIBRARY STATUS CARD -->
+    {% if library_status %}
+    <div class="rounded-2xl p-6 border-l-8 shadow-lg transform transition-all duration-500
+        {% if library_status.status == 'open' %}
+            bg-green-50 border-green-500 text-green-800 animate-pulse
+        {% elif library_status.status == 'closed' %}
+            bg-red-50 border-red-500 text-red-800 animate-pulse
+        {% elif library_status.status == 'maintenance' %}
+            bg-yellow-50 border-yellow-500 text-yellow-800
+        {% elif library_status.status == 'holiday' %}
+            bg-blue-50 border-blue-500 text-blue-800
+        {% endif %}">
+        <div class="flex items-center space-x-4">
+            {% if library_status.status == 'open' %}
+                <i class="fas fa-door-open text-3xl"></i>
+            {% elif library_status.status == 'closed' %}
+                <i class="fas fa-door-closed text-3xl"></i>
+            {% elif library_status.status == 'maintenance' %}
+                <i class="fas fa-tools text-3xl"></i>
+            {% elif library_status.status == 'holiday' %}
+                <i class="fas fa-umbrella-beach text-3xl"></i>
+            {% endif %}
+            <div>
+                <h2 class="text-xl font-bold">Library Status: {{ library_status.get_status_display }}</h2>
+                {% if library_status.comment %}
+                    <p class="mt-1 text-sm leading-relaxed">{{ library_status.comment }}</p>
+                {% else %}
+                    <p class="mt-1 text-sm leading-relaxed">No additional message.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- MANUAL UPDATE FORM -->
+    <div class="bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+            <i class="fas fa-edit mr-2 text-blue-600"></i>Update Library Status
+        </h1>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <label for="status" class="block font-medium text-gray-700 mb-1">Library Status</label>
+            <select name="status" id="status"
+                class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400 focus:outline-none transition">
+                <option value="open" {% if library_status and library_status.status == 'open' %}selected{% endif %}>Open</option>
+                <option value="closed" {% if library_status and library_status.status == 'closed' %}selected{% endif %}>Closed</option>
+                <option value="maintenance" {% if library_status and library_status.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                <option value="holiday" {% if library_status and library_status.status == 'holiday' %}selected{% endif %}>Holiday</option>
+            </select>
+
+            <label for="comment" class="block font-medium text-gray-700 mb-1">Comment (optional)</label>
+            <textarea name="comment" id="comment" rows="3"
+                class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+                placeholder="Enter a reason or note (e.g., Maintenance, Power outage, etc.)">{{ library_status.comment }}</textarea>
+
+            <button type="submit" name="manual_update_btn"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center justify-center">
+                <i class="fas fa-save mr-2"></i>Update Status
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% for order in orders %}
+<tr>
+    <td class="px-4 py-2">{{ order.id }}</td>
+    <td class="px-4 py-2">{{ order.student.get_full_name }}</td>
+    <td class="px-4 py-2">
+        {% for item in order.items.all %}
+            {{ item.book.title }} x{{ item.quantity }}<br>
+        {% endfor %}
+    </td>
+    <td class="px-4 py-2">{{ order.total_price }}</td>
+    <td class="px-4 py-2">{{ order.payment_method }}</td>
+    <td class="px-4 py-2">{{ order.status|title }}</td>
+    <td class="px-4 py-2">
+        {% if order.status == 'pending' %}
+            <button data-order="{{ order.id }}" class="update-status-btn bg-blue-600 text-white px-2 py-1 rounded">Process</button>
+        {% elif order.status == 'processing' %}
+            <button data-order="{{ order.id }}" class="update-status-btn bg-yellow-500 text-white px-2 py-1 rounded">Ready</button>
+        {% elif order.status == 'ready' %}
+            <button data-order="{{ order.id }}" class="update-status-btn bg-green-600 text-white px-2 py-1 rounded">Delivered</button>
+        {% endif %}
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7" class="px-4 py-4 text-center text-gray-500">No orders yet.</td>
+</tr>
+{% endfor %}

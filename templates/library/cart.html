@@ -1,0 +1,36 @@
+{% extends 'library/base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10">
+    <h1 class="text-2xl font-bold mb-6">Shopping Cart</h1>
+    
+    {% if books %}
+    <div class="bg-white shadow rounded p-4">
+        {% for item in books %}
+        <div class="flex justify-between items-center border-b py-2">
+            <div class="flex items-center space-x-4">
+                <img src="{{ item.book.image.url }}" class="w-16 h-20 object-cover rounded">
+                <div>
+                    <h2 class="font-semibold">{{ item.book.title }}</h2>
+                    <p>Price: ₱{{ item.book.price }}</p>
+                </div>
+            </div>
+            <div>
+                <p>Qty: {{ item.qty }}</p>
+                <p>Subtotal: ₱{{ item.subtotal }}</p>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="text-right mt-4 font-bold text-lg">
+            Total: ₱{{ total_price }}
+        </div>
+        <div class="text-right mt-4">
+            <a href="{% url 'checkout' %}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Proceed to Checkout
+            </a>
+        </div>
+    </div>
+    {% else %}
+        <p>Your cart is empty.</p>
+    {% endif %}
+</div>
+{% endblock %}

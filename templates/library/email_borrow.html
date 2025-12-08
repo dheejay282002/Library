@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ system_name }} - Borrowing Confirmation</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; background-color: #f4f6f8; color: #333; }
+    .email-container { max-width: 620px; margin: 40px auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+    .header { background-color: #1e3a8a; color: #ffffff; text-align: center; padding: 25px 20px; }
+    .header h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
+    .content { padding: 25px 30px; line-height: 1.6; }
+    .content h2 { color: #1e40af; font-size: 20px; margin-top: 0; }
+    .content ul { padding-left: 20px; margin: 10px 0 20px 0; }
+    .content li { margin-bottom: 8px; }
+    .info-box { background-color: #f1f5f9; border-left: 4px solid #2563eb; padding: 15px 20px; margin: 20px 0; border-radius: 6px; }
+    .footer { text-align: center; background-color: #f9fafb; border-top: 1px solid #e5e7eb; padding: 15px; font-size: 13px; color: #6b7280; }
+    .footer a { color: #2563eb; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>{{ system_name }} Borrowing Confirmation</h1>
+    </div>
+
+    <div class="content">
+      <p>Dear <strong>{{ student.get_full_name }}</strong>,</p>
+      <p>
+        Your borrowing request has been successfully processed. Below is a summary of the books you borrowed from {{ system_name }}:
+      </p>
+
+      <h2>Borrowed Books</h2>
+      <ul>
+        {% for book in borrowed_books %}
+          <li><strong>{{ book.title }}</strong> by {{ book.author }}<br>
+          <small>ISBN: {{ book.isbn }}</small></li>
+        {% endfor %}
+      </ul>
+
+      <div class="info-box">
+        <p><strong>Transaction Code:</strong> {{ transaction.transaction_code }}</p>
+        <p><strong>Due Date:</strong> {{ due_date|date:"Y-m-d" }}</p>
+      </div>
+
+      <p>
+        Please ensure that all books are returned <strong>on or before the due date</strong> to avoid penalties or account restrictions.
+      </p>
+
+      <p>
+        If you have any concerns or wish to extend your borrowing period, kindly reach out to the library desk or reply to this email.
+      </p>
+
+      <p style="margin-top: 25px;">
+        Sincerely,<br>
+        <strong>{{ system_name }} Team</strong>
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>
+        This is an automated message — please do not reply directly.<br>
+        © {{ now|date:"Y" }} {{ system_name }}.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

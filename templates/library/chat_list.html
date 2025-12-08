@@ -1,0 +1,29 @@
+{% extends 'library/base.html' %}
+{% block title %}Chats{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Chats</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for thread in threads %}
+        <a href="{% url 'chat_thread' thread.id %}" 
+           class="block p-4 bg-white shadow rounded hover:bg-blue-50 transition">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-user-circle text-3xl"></i>
+                <div>
+                    <p class="font-semibold">{{ thread.other_user.get_full_name|default:thread.other_user.username }}</p>
+                    <p class="text-sm text-gray-500">
+                        {% if thread.messages.last %}
+                            {{ thread.messages.last.content|truncatechars:40 }}
+                        {% else %}
+                            No messages yet.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </a>
+    {% empty %}
+        <p class="text-gray-500 text-center py-4">No chats available.</p>
+    {% endfor %}
+</div>
+{% endblock %}

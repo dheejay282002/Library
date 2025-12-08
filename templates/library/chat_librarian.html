@@ -1,0 +1,51 @@
+{% extends 'library/base.html' %}
+{% block title %}Chat Threads{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-4">Chats</h1>
+
+    <!-- Search -->
+    <input type="text" id="search" placeholder="Search..." class="w-full border p-2 rounded mb-4">
+
+    <div id="thread-list" class="divide-y divide-gray-200">
+        {% for thread in threads %}
+        <a href="{% url 'chat_detail' thread.id %}" class="flex justify-between items-center p-3 hover:bg-gray-100 rounded transition">
+            <div>
+                <p class="font-semibold">
+                    {{ thread.other_user.get_full_name|default:thread.other_user.username }}
+                </p>
+                {% with last_message=thread.messages.last %}
+                <p class="text-gray-500 text-sm">
+                    {% if last_message %}
+                        {{ last_message.sender.username }}: {{ last_message.content|truncatechars:30 }}
+                    {% else %}
+                        No messages yet
+                    {% endif %}
+                </p>
+                {% endwith %}
+            </div>
+            <div class="text-gray-400 text-sm">
+                {% with last_message=thread.messages.last %}
+                    {% if last_message %}
+                        {{ last_message.timestamp|date:"M d H:i" }}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </a>
+        {% empty %}
+            <p class="text-gray-500 text-center py-4">No chats yet.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.getElementById('search').addEventListener('input', function() {
+    let filter = this.value.toLowerCase();
+    document.querySelectorAll('#thread-list a').forEach(a => {
+        let name = a.querySelector('p.font-semibold').innerText.toLowerCase();
+        a.style.display = name.includes(filter) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% if page_obj.has_other_pages %}
+<div class="mt-8 flex justify-center items-center space-x-2">
+    {% if page_obj.has_previous %}
+        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_shelf %}&shelf={{ selected_shelf }}{% endif %}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">&laquo;&laquo;</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_shelf %}&shelf={{ selected_shelf }}{% endif %}" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">&laquo; Prev</a>
+    {% endif %}
+    <span class="px-3 py-1 bg-white border rounded">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_shelf %}&shelf={{ selected_shelf }}{% endif %}" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Next &raquo;</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_shelf %}&shelf={{ selected_shelf }}{% endif %}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">&raquo;&raquo;</a>
+    {% endif %}
+</div>
+{% endif %}

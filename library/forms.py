@@ -3,6 +3,11 @@ from django.contrib.auth.forms import AuthenticationForm
 from .models import Student, Book, User, Librarian, POS, SystemSettings
 import csv
 from io import TextIOWrapper
+from django import forms
+from django.core.exceptions import ValidationError
+from django.contrib.auth.password_validation import validate_password
+from .models import Student
+
 
 
 class LoginForm(AuthenticationForm):
@@ -18,17 +23,20 @@ class LoginForm(AuthenticationForm):
             'placeholder': 'Password'
         })
     )
+##editedfrom django import forms
+from django.core.exceptions import ValidationError
+from .models import Student
+import re
 
+from django import forms
+from django.core.exceptions import ValidationError
+import re
+from .models import Student
 
-class StudentIDVerificationForm(forms.Form):
-    student_id = forms.CharField(
-        max_length=50,
-        widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-            'placeholder': 'Enter your Student ID'
-        })
-    )
-
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import Student
+import re
 
 class StudentRegistrationForm(forms.ModelForm):
     password = forms.CharField(
@@ -43,10 +51,40 @@ class StudentRegistrationForm(forms.ModelForm):
             'placeholder': 'Confirm Password'
         })
     )
-    
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder': 'Email Address'
+        })
+    )
+    birthday = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'type': 'date'
+        }),
+    )
+    address = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder': 'Permanent Address'
+        }),
+    )
+    current_address = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder': 'Current Address'
+        }),
+    )
+    guardian_name = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder': 'Guardian Name'
+        }),
+    )
+
     class Meta:
         model = Student
-        fields = ['phone_number', 'profile_photo']
+        fields = ['email', 'phone_number', 'profile_photo', 'birthday', 'address', 'current_address', 'guardian_name']
         widgets = {
             'phone_number': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
@@ -56,27 +94,49 @@ class StudentRegistrationForm(forms.ModelForm):
                 'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
             })
         }
-    
-    def __init__(self, *args, **kwargs):
-        self.email = kwargs.pop('email', None)
-        super().__init__(*args, **kwargs)
-        self.fields['email'] = forms.EmailField(
-            widget=forms.EmailInput(attrs={
-                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                'placeholder': 'Email Address'
-            })
-        )
-    
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+
+        # Minimum 8 characters
+        if len(password) < 8:
+            raise ValidationError("Password must be at least 8 characters long")
+
+        # Uppercase
+        if not re.search(r'[A-Z]', password):
+            raise ValidationError("Password must include at least one uppercase letter")
+
+        # Lowercase
+        if not re.search(r'[a-z]', password):
+            raise ValidationError("Password must include at least one lowercase letter")
+
+        # Number
+        if not re.search(r'[0-9]', password):
+            raise ValidationError("Password must include at least one number")
+
+        # Special character
+        if not re.search(r'[^A-Za-z0-9]', password):
+            raise ValidationError("Password must include at least one special character")
+
+        return password
+
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get('password')
         confirm_password = cleaned_data.get('confirm_password')
-        
+
         if password and confirm_password and password != confirm_password:
-            raise forms.ValidationError("Passwords do not match")
-        
+            raise ValidationError("Passwords do not match")
+
         return cleaned_data
 
+class StudentIDVerificationForm(forms.Form):
+    student_id = forms.CharField(
+        label="Student ID",
+        max_length=20,
+        widget=forms.TextInput(attrs={'placeholder': 'Enter your Student ID'})
+    )
+####
 
 class EmailVerificationForm(forms.Form):
     code = forms.CharField(
@@ -107,11 +167,12 @@ class CSVUploadForm(forms.Form):
 class BookForm(forms.ModelForm):
     class Meta:
         model = Book
-        fields = ['isbn', 'title', 'author', 'category', 'publisher', 'year_published', 'copies_total', 'description', 'book_cover']
+        fields = ['isbn', 'title', 'author', 'category', 'shelf', 'publisher', 'year_published', 'copies_total', 'description', 'book_cover']
         widgets = {
             'isbn': forms.TextInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
             'title': forms.TextInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
             'author': forms.TextInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
+            'shelf': forms.TextInput(attrs={'class': 'form-input'}),            
             'category': forms.TextInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
             'publisher': forms.TextInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
             'year_published': forms.NumberInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
@@ -210,8 +271,40 @@ class LibrarianForm(forms.ModelForm):
 class SystemSettingsForm(forms.ModelForm):
     class Meta:
         model = SystemSettings
-        fields = ['system_name', 'system_logo']
+        fields = ['system_name', 'system_tagline', 'system_logo']
         widgets = {
             'system_name': forms.TextInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
+            'system_tagline': forms.TextInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
             'system_logo': forms.FileInput(attrs={'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg'}),
         }
+# library/forms.py
+from django import forms
+
+class StudentIDForm(forms.Form):
+    student_id = forms.CharField(
+        max_length=50,
+        label='Student ID',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter your Student ID',
+            'class': 'w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none shadow-sm'
+        })
+    )
+
+
+from django import forms
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField(label="Your Email", widget=forms.EmailInput(attrs={'class': 'input-field'}))
+
+class ResetPasswordForm(forms.Form):
+    new_password = forms.CharField(label="New Password", widget=forms.PasswordInput(attrs={'class': 'input-field'}))
+    confirm_password = forms.CharField(label="Confirm Password", widget=forms.PasswordInput(attrs={'class': 'input-field'}))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('new_password') != cleaned_data.get('confirm_password'):
+            raise forms.ValidationError("Passwords do not match.")
+        return cleaned_data

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ system_name }} - Return Confirmation</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+    .email-container {
+      max-width: 620px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+    .header {
+      background-color: #065f46;
+      color: #ffffff;
+      text-align: center;
+      padding: 25px 20px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.5px;
+    }
+    .content {
+      padding: 25px 30px;
+      line-height: 1.6;
+    }
+    .content h2 {
+      color: #065f46;
+      font-size: 20px;
+      margin-top: 0;
+    }
+    .content ul {
+      padding-left: 20px;
+      margin: 10px 0 20px 0;
+    }
+    .content li {
+      margin-bottom: 8px;
+    }
+    .info-box {
+      background-color: #ecfdf5;
+      border-left: 4px solid #059669;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 6px;
+    }
+    .footer {
+      text-align: center;
+      background-color: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+      padding: 15px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .footer a {
+      color: #059669;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>{{ system_name }} - Return Confirmation</h1>
+    </div>
+
+    <div class="content">
+      <p>Dear <strong>{{ student.get_full_name }}</strong>,</p>
+      <p>We have successfully processed the return of your borrowed books. Here are the details:</p>
+
+      <h2>Returned Books</h2>
+      <ul>
+        {% for item in returned_items %}
+          <li><strong>{{ item.book.title }}</strong> by {{ item.book.author }}</li>
+        {% endfor %}
+      </ul>
+
+      {% if unreturned_items %}
+        <h2>Books Still Pending Return</h2>
+        <ul>
+          {% for item in unreturned_items %}
+            <li><strong>{{ item.book.title }}</strong></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="info-box">
+        <p><strong>Transaction Code:</strong> {{ transaction.transaction_code }}</p>
+        {% if transaction.return_date %}
+          <p><strong>Return Date:</strong> {{ transaction.return_date|date:"Y-m-d" }}</p>
+        {% endif %}
+      </div>
+
+      <p>
+        Thank you for returning your books promptly. Your cooperation helps keep the library running smoothly and ensures other students can access these materials too.
+      </p>
+
+      <p style="margin-top: 25px;">
+        Warm regards,<br>
+        <strong>{{ system_name }} Team</strong>
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>
+        This is an automated message — please do not reply directly.<br>
+        © {{ now|date:"Y" }} {{ system_name }}.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

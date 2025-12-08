@@ -1,0 +1,18 @@
+{% for book in books %}
+<div class="bg-white rounded-lg shadow p-4 flex flex-col">
+    {% if book.book_cover %}
+        <img src="{{ book.book_cover.url }}" alt="{{ book.title }}" class="h-48 w-full object-cover rounded mb-2">
+    {% else %}
+        <div class="h-48 w-full bg-gray-200 flex items-center justify-center rounded mb-2 text-gray-500">
+            No Cover
+        </div>
+    {% endif %}
+    <h2 class="font-semibold text-lg line-clamp-2">{{ book.title }}</h2>
+    <p class="text-sm text-gray-600 line-clamp-1">By {{ book.author }}</p>
+    {% if book.shelf %}
+        <p class="mt-1 text-xs text-gray-500">Shelf: {{ book.shelf }}</p>
+    {% endif %}
+</div>
+{% empty %}
+<p class="col-span-full text-center text-gray-500">No books found.</p>
+{% endfor %}

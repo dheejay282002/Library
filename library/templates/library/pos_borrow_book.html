@@ -1,85 +1,375 @@
+<!--recover here-->
 {% extends 'library/base.html' %}
 
 {% block title %}Borrow Book - POS{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6"><i class="fas fa-book-reader mr-2 text-green-600"></i>Borrow Book</h1>
-    
-    {% if step == 'student_id' %}
-        <form method="post" class="space-y-6">
-            {% csrf_token %}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Enter Student ID</label>
-                <input type="text" name="student_id" required class="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-xl">
-            </div>
-            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                <i class="fas fa-check mr-2"></i>Verify Student
-            </button>
-        </form>
-    {% elif step == 'add_books' %}
-        <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
-            <h3 class="font-semibold text-blue-800">Student Information</h3>
-            <p class="text-gray-700"><strong>Name:</strong> {{ student.get_full_name }}</p>
-            <p class="text-gray-700"><strong>Course:</strong> {{ student.course }} - {{ student.year }} {{ student.section }}</p>
-        </div>
-        
-        {% if books %}
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">Books to Borrow:</h3>
-                {% for book in books %}
-                    <div class="border-l-4 border-green-600 pl-4 py-2 mb-2">
-                        <p class="font-semibold">{{ book.title }}</p>
-                        <p class="text-sm text-gray-600">ISBN: {{ book.isbn }}</p>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-        
-        <form method="post" class="space-y-6">
-            {% csrf_token %}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Enter Book ISBN</label>
-                <input type="text" name="isbn" required 
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-xl"
-                    placeholder="e.g. 978-3-16-148410-0 or 9783161484100 or ABC123">
-            </div>
+<div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8">
+    <div class="flex items-center justify-between border-b-2 border-gray-200 pb-4 mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">
+            <i class="fas fa-book-reader mr-3 text-green-600"></i>Borrow Books
+        </h1>
+        <a href="{% url 'pos_home' %}" class="text-gray-500 hover:text-gray-700 transition">
+            <i class="fas fa-times-circle text-3xl"></i>
+        </a>
+    </div>
 
-            <div class="flex gap-4">
-                <button type="submit" name="add_another" class="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
-                    <i class="fas fa-plus mr-2"></i>Add Another Book
-                </button>
-                <button type="submit" class="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                    <i class="fas fa-check mr-2"></i>Continue
-                </button>
-            </div>
-        </form>
-    {% elif step == 'confirm' %}
-        <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
-            <h3 class="font-semibold text-blue-800">Student Information</h3>
-            <p class="text-gray-700"><strong>Name:</strong> {{ student.get_full_name }}</p>
-            <p class="text-gray-700"><strong>Course:</strong> {{ student.course }} - {{ student.year }} {{ student.section }}</p>
-        </div>
-        
-        <div class="mb-6">
-            <h3 class="font-semibold mb-2">Books to Borrow:</h3>
+    {% if step == "add_books" or step == "confirm" %}
+
+    {% endif %}
+
+    {% if step == "add_books" %}
+    <!-- Add Books Step -->
+    <div class="mb-8">
+        <h3 class="font-bold text-xl mb-4 text-gray-800">
+            <i class="fas fa-list mr-2 text-green-600"></i>Books to Borrow (<span id="totalBooks">{{ books|length }}</span>)
+        </h3>
+        <div class="space-y-3" id="booksList">
             {% for book in books %}
-                <div class="border-l-4 border-green-600 pl-4 py-2 mb-2">
-                    <p class="font-semibold">{{ book.title }}</p>
-                    <p class="text-sm text-gray-600">ISBN: {{ book.isbn }} | Author: {{ book.author }}</p>
-                </div>
+            <div class="relative border-l-4 border-green-600 bg-green-50 pl-6 pr-10 py-4 rounded-r-lg shadow-sm" id="book-card-{{ book.id }}">
+                <p class="font-bold text-lg text-gray-800">{{ book.title }}</p>
+                <p class="text-gray-600"><strong>ISBN:</strong> {{ book.isbn }}</p>
+                <p class="text-gray-600"><strong>Shelf:</strong> {{ book.shelf|default:"(no shelf assigned)" }}</p>
+
+                <p class="text-gray-600"><strong>Author:</strong> {{ book.author }}</p>
+                <button type="button"
+                    class="absolute top-2 right-2 text-red-600 font-bold hover:text-red-800"
+                    onclick="removeBook('{{ book.id }}')">&times;</button>
+            </div>
             {% endfor %}
         </div>
-        
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <button type="submit" name="confirm_borrow" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                <i class="fas fa-check-circle mr-2"></i>Confirm Borrowing
+    </div>
+
+    <!-- Manual ISBN Input -->
+    <form method="post" class="space-y-6" id="borrowForm">
+        {% csrf_token %}
+        <div id="hiddenIsbnContainer"></div>
+
+        <div class="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
+            <label class="block text-lg font-semibold text-gray-700 mb-3">
+                <i class="fas fa-barcode mr-2"></i>Enter or Scan Book ISBN
+            </label>
+            <input type="text" id="isbnInput" name="isbn"
+                class="w-full px-6 py-4 border-2 border-gray-300 rounded-lg text-center text-2xl focus:outline-none focus:ring-2 transition"
+                placeholder="Enter ISBN manually or scan barcode" autofocus>
+            <p id="isbnFeedback" class="text-center mt-2 font-semibold"></p>
+        </div>
+
+        <div class="flex gap-4">
+            <button type="submit" name="add_book"
+                class="flex-1 bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition font-bold text-lg shadow-lg transform hover:scale-105">
+                <i class="fas fa-plus mr-2"></i>Add Book
             </button>
-            <a href="{% url 'pos_home' %}" class="block w-full bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition font-semibold text-center">
+            <button type="submit" name="continue_borrow" id="continueBtn"
+                class="flex-1 bg-green-600 text-white py-4 rounded-lg hover:bg-green-700 transition font-bold text-lg shadow-lg transform hover:scale-105">
+                <i class="fas fa-arrow-right mr-2"></i>Continue
+            </button>
+        </div>
+    </form>
+
+    <!-- Hidden scanner input -->
+    <input type="text" id="scannerInput" style="position:absolute; left:-10000px;" autocomplete="off">
+
+    <!-- Modal for errors -->
+    <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-sm text-center shadow-2xl">
+            <h3 class="text-lg font-bold mb-4 text-red-600" id="modalTitle">Error</h3>
+            <p class="text-gray-700 mb-6" id="modalMessage"></p>
+            <button onclick="closeModal()"
+                class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold">Close</button>
+        </div>
+    </div>
+
+
+{% endif %}
+
+{% if step == "confirm" %}
+<!-- Confirm Step -->
+<div class="mb-8">
+    <h3 class="font-bold text-2xl mb-6 text-gray-800 text-center">
+        <i class="fas fa-check-circle mr-2 text-green-600"></i>Review Books to Borrow
+    </h3>
+    <div class="bg-gray-50 rounded-lg p-6 border-2 border-gray-200">
+        <table class="w-full">
+            <thead class="bg-gray-200 border-b-2 border-gray-300">
+                <tr>
+                    <th class="px-4 py-3 text-left font-bold text-gray-700">#</th>
+                    <th class="px-4 py-3 text-left font-bold text-gray-700">Book Title</th>
+                    <th class="px-4 py-3 text-left font-bold text-gray-700">ISBN</th>
+                    <th class="px-4 py-3 text-left font-bold text-gray-700">Author</th>
+                </tr>
+            </thead>
+            <tbody id="confirmBooksList">
+                {% for book in books %}
+                <tr>
+                    <td class="px-4 py-3 font-semibold text-gray-600">{{ forloop.counter }}</td>
+                    <td class="px-4 py-3 font-bold text-gray-800">{{ book.title }}</td>
+                    <td class="px-4 py-3 text-gray-600 font-mono">{{ book.isbn }}</td>
+
+                    <td class="px-4 py-3 text-gray-600">{{ book.author }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="mt-4 text-right font-bold text-gray-700">
+            Total Books: <span class="text-green-600">{{ books|length }}</span>
+        </div>
+
+        <form method="post" class="mt-4 space-y-4">
+            {% csrf_token %}
+            <button type="submit" name="confirm_borrow"
+                class="w-full bg-green-600 text-white py-5 rounded-lg hover:bg-green-700 transition font-bold text-xl shadow-2xl transform hover:scale-105">
+                <i class="fas fa-check-circle mr-2"></i>Borrow These Books
+            </button>
+            <a href="{% url 'pos_home' %}"
+                class="block w-full bg-gray-600 text-white py-5 rounded-lg hover:bg-gray-700 transition font-bold text-xl text-center shadow-lg">
                 <i class="fas fa-times mr-2"></i>Cancel
             </a>
         </form>
-    {% endif %}
+    </div>
+</div>
+{% endif %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    /* ---------- Elements ---------- */
+    const isbnInput = document.getElementById('isbnInput');
+    const isbnFeedback = document.getElementById('isbnFeedback');
+    const borrowForm = document.getElementById('borrowForm');
+    const booksListContainer = document.getElementById('booksList');
+    const modal = document.getElementById('errorModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+
+    const csrfToken = getCSRFToken();
+
+    function getCSRFToken() {
+        const name = 'csrftoken';
+        const cookie = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+        return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
+    }
+
+    function normalizeISBN(isbn) {
+        return isbn.replace(/[^0-9Xx]/g,'').toUpperCase();
+    }
+
+function showModal(title, message) {
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // ✅ Automatically hide after 2 seconds
+    setTimeout(() => {
+        closeModal();
+    }, 2000);
+}
+
+function closeModal() {
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
+
+    /* ---------- Update Book List UI ---------- */
+function renderBookList(books){
+    booksListContainer.innerHTML = '';
+    books.forEach(book => {
+        const div = document.createElement('div');
+        div.id = `book-card-${book.id}`;
+        div.className = "relative border-l-4 border-green-600 bg-green-50 pl-6 pr-10 py-4 rounded-r-lg shadow-sm";
+        div.innerHTML = `
+            <p class="font-bold text-lg text-gray-800">${book.title}</p>
+            <p class="text-gray-600"><strong>ISBN:</strong> ${book.isbn}</p>            <p class="text-gray-600"><strong>Author:</strong> ${book.author}</p>
+            <button type="button" class="absolute top-2 right-2 text-red-600 font-bold hover:text-red-800"
+                onclick="removeBook('${book.id}')">&times;</button>`;
+        booksListContainer.appendChild(div);
+    });
+    updateTotal();
+}
+
+    function updateTotal(){
+        const totalBooksElement = document.getElementById('totalBooks');
+        const bookCards = document.querySelectorAll('[id^="book-card-"]');
+        if(totalBooksElement) totalBooksElement.textContent = bookCards.length;
+    }
+
+    /* ---------- AJAX Add Book ---------- */
+    function addBookServer(isbn){
+        if(!isbn) return;
+        if(addBookServer._running) return;
+        addBookServer._running = true;
+
+        fetch("{% url 'pos_borrow_book' %}",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/x-www-form-urlencoded",
+                "X-CSRFToken": csrfToken,
+                "X-Requested-With":"XMLHttpRequest"
+            },
+            body: new URLSearchParams({ 'isbn': isbn })
+        })
+        .then(res=>{
+            addBookServer._running = false;
+            if (!res.ok) return res.json().then(j=>{throw j;});
+            return res.json();
+        })
+        .then(data=>{
+            if(data.error) return showModal('Error', data.error);
+            renderBookList(data.books || []);
+            isbnFeedback.textContent = `Added: ${data.books && data.books.length ? (data.books.slice(-1)[0].title) : isbn}`;
+            isbnFeedback.className = 'text-center mt-2 font-semibold text-green-600';
+        })
+        .catch(err=>{
+            addBookServer._running = false;
+            const message = err && err.error ? err.error : 'Failed to add book';
+            showModal('Error', message);
+        });
+    }
+    addBookServer._running = false;
+
+    /* ---------- AJAX Validate ISBN ---------- */
+    function validateIsbnServer(isbn){
+        return fetch("{% url 'validate_book_isbn' %}?isbn="+encodeURIComponent(isbn))
+            .then(res=>{
+                if(!res.ok) return res.json().then(j=>Promise.reject(j));
+                return res.json();
+            });
+    }
+
+    /* ---------- Remove Book ---------- */
+    window.removeBook = function(bookId){
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `action=remove&book_id=${bookId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            const card = document.getElementById(`book-card-${bookId}`);
+            if (card) card.remove();
+            updateTotal();
+        })
+        .catch(err => {
+            console.error(err);
+            showModal('Error', 'Error removing book: ' + err.message);
+        });
+    }
+
+    /* ---------- Live Validation ---------- */
+    let validateTimer = null;
+    isbnInput.addEventListener('input', ()=>{
+        clearTimeout(validateTimer);
+        const raw = isbnInput.value.trim();
+        if(!raw){
+            isbnInput.classList.remove('border-green-600','border-red-600');
+            isbnFeedback.textContent = '';
+            return;
+        }
+        validateTimer = setTimeout(()=>{
+            const isbn = normalizeISBN(raw);
+            validateIsbnServer(isbn)
+            .then(data=>{
+                if(data.valid && !data.unavailable){
+                    isbnInput.classList.remove('border-red-600');
+                    isbnInput.classList.add('border-green-600');
+                    isbnFeedback.textContent = data.book.title;
+                    isbnFeedback.className = 'text-center mt-2 font-semibold text-green-600';
+                } else if(data.valid && data.unavailable){
+                    isbnInput.classList.remove('border-green-600');
+                    isbnInput.classList.add('border-red-600');
+                    isbnFeedback.textContent = `${data.book.title} (Unavailable)`;
+                    isbnFeedback.className = 'text-center mt-2 font-semibold text-red-600';
+                } else {
+                    isbnInput.classList.remove('border-green-600');
+                    isbnInput.classList.add('border-red-600');
+                    isbnFeedback.textContent = 'Book not found';
+                    isbnFeedback.className = 'text-center mt-2 font-semibold text-red-600';
+                }
+            })
+            .catch(err=>{
+                isbnInput.classList.remove('border-green-600');
+                isbnInput.classList.add('border-red-600');
+                isbnFeedback.textContent = (err && err.reason) ? err.reason : 'Error checking ISBN';
+                isbnFeedback.className = 'text-center mt-2 font-semibold text-red-600';
+            });
+        },300);
+    });
+
+    isbnInput.addEventListener('keypress',(e)=>{
+        if(e.key==='Enter'){
+            e.preventDefault();
+            const isbn = normalizeISBN(isbnInput.value.trim());
+            if(!isbn){ showModal('Error','Please enter or scan an ISBN'); return; }
+            addBookServer(isbn);
+            isbnInput.value=''; isbnFeedback.textContent='';
+        }
+    });
+
+    /* ---------- Scanner Detection ---------- */
+    let keyBuffer = [];
+    let bufferTimer = null;
+    const SCAN_MAX_DURATION_MS = 300;
+    const SCAN_MIN_LENGTH = 6;
+
+    document.addEventListener('keydown', (e)=>{
+        if(e.key.length!==1 && e.key!=='Enter') return;
+        const now = Date.now();
+        keyBuffer.push({key:e.key,time:now});
+        if(bufferTimer) clearTimeout(bufferTimer);
+        bufferTimer = setTimeout(()=>{keyBuffer=[]; bufferTimer=null;},1000);
+
+        if(e.key==='Enter'){
+            const chars = keyBuffer.filter(k=>k.key!=='Enter');
+            const len = chars.length;
+            const duration = len ? (chars[len-1].time - chars[0].time) : 0;
+            keyBuffer=[]; if(bufferTimer){clearTimeout(bufferTimer); bufferTimer=null;}
+
+            if(len>=SCAN_MIN_LENGTH && duration<=SCAN_MAX_DURATION_MS){
+                const raw = chars.map(c=>c.key).join('');
+                const isbn = normalizeISBN(raw);
+                if(!isbn) return;
+                isbnInput.classList.remove('border-red-600'); isbnInput.classList.add('border-green-600');
+                isbnFeedback.textContent='Scanning...'; isbnFeedback.className='text-center mt-2 font-semibold text-gray-600';
+                validateIsbnServer(isbn)
+                .then(data=>{
+                    if(data.valid && !data.unavailable) addBookServer(isbn);
+                    else if(data.valid && data.unavailable){
+                        isbnInput.classList.remove('border-green-600'); isbnInput.classList.add('border-red-600');
+                        isbnFeedback.textContent=`${data.book.title} (Unavailable)`; isbnFeedback.className='text-center mt-2 font-semibold text-red-600';
+                        showModal('Unavailable', `${data.book.title} is currently unavailable`);
+                    } else {
+                        isbnInput.classList.remove('border-green-600'); isbnInput.classList.add('border-red-600');
+                        isbnFeedback.textContent='Book not found'; isbnFeedback.className='text-center mt-2 font-semibold text-red-600';
+                        showModal('Not Found','Book not found in system');
+                    }
+                    isbnInput.value='';
+                })
+                .catch(()=>{isbnInput.classList.remove('border-green-600'); isbnInput.classList.add('border-red-600'); isbnFeedback.textContent='Server error'; isbnFeedback.className='text-center mt-2 font-semibold text-red-600';});
+            } else {
+                const raw = chars.map(c=>c.key).join('');
+                if(document.activeElement!==isbnInput && raw.trim().length>0){
+                    isbnInput.value = raw;
+                    const isbn = normalizeISBN(raw);
+                    if(isbn) setTimeout(()=>{addBookServer(isbn); isbnInput.value=''; isbnFeedback.textContent='';},50);
+                }
+            }
+        }
+    });
+
+    /* ---------- Keep input focused ---------- */
+    document.addEventListener('click',(e)=>{
+        if(e.target===isbnInput || isbnInput.contains(e.target)) isbnInput.focus();
+    });
+
+    /* Expose modal close */
+    window.closeModal = closeModal;
+});
+
+</script>
+
 </div>
 {% endblock %}

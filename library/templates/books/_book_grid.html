@@ -1,0 +1,40 @@
+{% for book in books %}
+<div class="bg-white rounded-lg shadow-md hover:shadow-xl transition p-3 overflow-hidden">
+    <div class="w-full aspect-[3/4] bg-gray-200 relative overflow-hidden">
+        {% if book.book_cover %}
+            <img src="{{ book.book_cover.url }}" alt="{{ book.title }}" class="w-full h-full object-cover">
+        {% else %}
+            <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-green-900 to-green-900 text-white p-4">
+                <i class="fas fa-book text-6xl mb-2 opacity-80"></i>
+                <p class="text-xs text-center font-semibold opacity-90">{{ book.category }}</p>
+            </div>
+        {% endif %}
+        <div class="absolute top-2 right-2">
+            {% if book.is_available %}
+                <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg">
+                    <i class="fas fa-check"></i> {{ book.copies_available }}
+                </span>
+            {% else %}
+                <span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg">
+                    <i class="fas fa-times"></i> Out
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="p-3">
+        <h3 class="font-bold text-gray-800 text-sm mb-1 line-clamp-2" title="{{ book.title }}">{{ book.title }}</h3>
+        <p class="text-xs text-gray-600 mb-2 line-clamp-1" title="{{ book.author }}">by {{ book.author }}</p>
+        <div class="flex items-center justify-between">
+            <span class="text-xs bg-green-100 text-green-900 px-2 py-1 rounded">{{ book.category }}</span>
+            {% if book.year_published %}<span class="text-xs text-gray-500">{{ book.year_published }}</span>{% endif %}
+        </div>
+        {% if book.shelf %}
+            <p class="text-xs text-gray-400 mt-2 hidden md:block">Shelf: {{ book.shelf }}</p>
+        {% endif %}
+        <p class="text-xs text-gray-400 mt-1 hidden md:block">ISBN: {{ book.isbn }}</p>
+    </div>
+</div>
+{% empty %}
+<p class="col-span-full text-center text-gray-500">No books found.</p>
+{% endfor %}

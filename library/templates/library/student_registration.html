@@ -1,60 +1,193 @@
 {% extends 'library/base.html' %}
-
 {% block title %}Student Registration{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8">
-    <div class="text-center mb-8">
-        <div class="flex justify-center mb-4">
-            {% if system_settings.system_logo %}
-                <img src="{{ system_settings.system_logo.url }}" alt="System Logo" class="h-20 w-20 object-contain">
-            {% else %}
-                <i class="fas fa-user-plus text-5xl text-blue-600"></i>
-            {% endif %}
+<div class="min-h-screen flex items-center justify-center">
+    <div class="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-8 w-full max-w-2xl">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="flex justify-center mb-4">
+                {% if system_settings.system_logo %}
+                    <img src="{{ system_settings.system_logo.url }}" alt="System Logo" class="h-20 w-20 object-contain">
+                {% else %}
+                    <i class="fas fa-user-plus text-5xl text-blue-600"></i>
+                {% endif %}
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">Student Registration</h1>
+            <p class="text-gray-800 mt-2">Complete your registration</p>
         </div>
-        <h1 class="text-3xl font-bold text-gray-800">Student Registration</h1>
-        <p class="text-gray-600 mt-2">Complete your registration</p>
+
+        <!-- Student Info Card -->
+        <div class="bg-green-50/30 border-l-4 border-green-600 p-4 mb-6 rounded-lg">
+            <h3 class="font-semibold text-green-900 mb-2">Your Information</h3>
+            <p class="text-gray-800"><strong>Student ID:</strong> {{ student.student_id }}</p>
+            <p class="text-gray-800"><strong>Name:</strong> {{ student.get_full_name }}</p>
+            <p class="text-gray-800"><strong>Course:</strong> {{ student.course }}</p>
+            <p class="text-gray-800"><strong>Year & Section:</strong> {{ student.year }} - {{ student.section }}</p>
+        </div>
+
+        <!-- Registration Form -->
+        <form method="post" action="{% url 'student_registration' %}" enctype="multipart/form-data"
+              class="space-y-6"
+              data-loading
+              data-loading-message="Creating Your Account..."
+              data-loading-submessage="Setting up your student profile">
+
+            {% csrf_token %}
+
+            <!-- ✅ FORM LAYOUT CHANGE ONLY (GRID WRAP ADDED) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-800 mb-2">Email Address *</label>
+                    {{ form.email }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-800 mb-2">Phone Number *</label>
+                    {{ form.phone_number }}
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-800 mb-2">Profile Photo *</label>
+                    {{ form.profile_photo }}
+                </div>
+
+                <div>
+                    {{ form.birthday.label_tag }}
+                    {{ form.birthday }}
+                    {% if form.birthday.errors %}
+                        <p class="text-red-500 text-sm">{{ form.birthday.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {{ form.address.label_tag }}
+                    {{ form.address }}
+                    {% if form.address.errors %}
+                        <p class="text-red-500 text-sm">{{ form.address.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="md:col-span-2">
+                    {{ form.current_address.label_tag }}
+                    {{ form.current_address }}
+                    {% if form.current_address.errors %}
+                        <p class="text-red-500 text-sm">{{ form.current_address.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="md:col-span-2">
+                    {{ form.guardian_name.label_tag }}
+                    {{ form.guardian_name }}
+                    {% if form.guardian_name.errors %}
+                        <p class="text-red-500 text-sm">{{ form.guardian_name.errors }}</p>
+                    {% endif %}
+                </div>
+
+            </div>
+            
+            <!-- ✅ end of layout change -->
+
+            <!-- Password Fields (left untouched) -->
+            <div>
+                <label class="block text-sm font-medium text-gray-800 mb-2">Password *</label>
+                {{ form.password }}
+
+                <div class="mt-2 h-2 w-full bg-gray-700/50 rounded">
+                    <div id="password-strength-bar" class="h-2 rounded" style="width: 0%"></div>
+                </div>
+                <p id="password-strength-text" class="text-sm mt-1 text-gray-800">Enter a password</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-800 mb-2">Confirm Password *</label>
+                {{ form.confirm_password }}
+                <p id="password-match-text" class="text-sm mt-1 text-gray-900">Confirm your password</p>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center">
+                <i class="fas fa-paper-plane mr-2"></i>Register
+            </button>
+
+        </form>
     </div>
-    
-    <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
-        <h3 class="font-semibold text-blue-800 mb-2">Your Information</h3>
-        <p class="text-gray-700"><strong>Student ID:</strong> {{ student.student_id }}</p>
-        <p class="text-gray-700"><strong>Name:</strong> {{ student.get_full_name }}</p>
-        <p class="text-gray-700"><strong>Course:</strong> {{ student.course }}</p>
-        <p class="text-gray-700"><strong>Year & Section:</strong> {{ student.year }} - {{ student.section }}</p>
-    </div>
-    
-    <form method="post" action="{% url 'student_registration' %}" enctype="multipart/form-data" class="space-y-6" data-loading data-loading-message="Creating Your Account..." data-loading-submessage="Setting up your student profile">
-        {% csrf_token %}
-        
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-            {{ form.email }}
-        </div>
-        
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-            {{ form.phone_number }}
-        </div>
-        
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Profile Photo *</label>
-            {{ form.profile_photo }}
-        </div>
-        
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-            {{ form.password }}
-        </div>
-        
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
-            {{ form.confirm_password }}
-        </div>
-        
-        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
-            <i class="fas fa-paper-plane mr-2"></i>Register
-        </button>
-    </form>
 </div>
+
+<style>
+.backdrop-blur-md {
+    backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+<style>
+.backdrop-blur-md {
+    backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+</style>
+
+<!-- Password Strength + Match Script (unchanged) -->
+<script>
+const passwordInput = document.querySelector('[name="password"]');
+const confirmInput = document.querySelector('[name="confirm_password"]');
+const strengthBar = document.getElementById('password-strength-bar');
+const strengthText = document.getElementById('password-strength-text');
+const matchText = document.getElementById('password-match-text');
+
+function getStrength(password) {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+}
+
+function updateStrength() {
+    const password = passwordInput.value;
+    const strength = getStrength(password);
+    const percent = (strength / 5) * 100;
+    strengthBar.style.width = percent + '%';
+
+    if (strength <= 2) {
+        strengthBar.className = 'h-2 rounded bg-red-500';
+        strengthText.textContent = 'Weak password';
+        strengthText.className = 'text-sm mt-1 text-red-600';
+    } else if (strength <= 4) {
+        strengthBar.className = 'h-2 rounded bg-yellow-400';
+        strengthText.textContent = 'Moderate password';
+        strengthText.className = 'text-sm mt-1 text-yellow-600';
+    } else {
+        strengthBar.className = 'h-2 rounded bg-green-500';
+        strengthText.textContent = 'Strong password';
+        strengthText.className = 'text-sm mt-1 text-green-600';
+    }
+
+    updateMatch();
+}
+
+function updateMatch() {
+    const password = passwordInput.value;
+    const confirm = confirmInput.value;
+    if (!confirm) {
+        matchText.textContent = 'Confirm your password';
+        matchText.className = 'text-sm mt-1 text-gray-300';
+    } else if (password === confirm) {
+        matchText.textContent = 'Passwords match';
+        matchText.className = 'text-sm mt-1 text-green-600';
+    } else {
+        matchText.textContent = 'Passwords do not match';
+        matchText.className = 'text-sm mt-1 text-red-600';
+    }
+}
+
+passwordInput.addEventListener('input', updateStrength);
+confirmInput.addEventListener('input', updateMatch);
+</script>
+
 {% endblock %}

@@ -1,0 +1,189 @@
+{% extends 'library/base.html' %}
+{% load static %}
+
+{% block title %}POS System - Student Login{% endblock %}
+
+{% block content %}
+<style>
+body { margin:0; overflow:hidden; }
+
+/* Use a separate class for background to ensure Django static works */
+.fullscreen-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 10vh;
+    z-index: 1;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+}
+
+.logo-section {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+.logo-section img {
+    width: 10rem;
+    height: 10rem;
+    object-fit: contain;
+    margin-bottom: 1.5rem;
+    animation: pulse 2s infinite;
+}
+.hidden-input { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+.visible-input { opacity: 1; pointer-events: all; transition: opacity 0.5s ease; }
+.status-feedback { margin-top: 1rem; font-weight: bold; text-align: center; font-size: 1.25rem; }
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 50; display: none;
+}
+.modal-content { background: white; padding: 2rem; border-radius: 1rem; max-width: 400px; text-align: center; }
+.modal-content p { margin-bottom: 1.5rem; }
+</style>
+
+<div class="fullscreen-container" style="background-image: url('{% static 'images/bg.jpg' %}');">
+    <div class="logo-section">
+        {% if system_settings.system_logo %}
+            <img src="{{ system_settings.system_logo.url }}" alt="{{ system_settings.system_name|default:'Library POS' }}" 
+                 class="mx-auto mb-8 w-40 h-40 object-contain animate-pulse">
+        {% else %}
+            <img src="{% static 'images/default_logo.png' %}" alt="Library POS" 
+                 class="mx-auto mb-8 w-40 h-40 object-contain animate-pulse">
+        {% endif %}
+
+        <h1 class="text-white text-6xl font-bold mb-2 text-center">
+            {{ system_settings.system_name|default:"Library POS" }}
+        </h1>
+
+        {% if system_settings.system_tagline %}
+            <p class="text-white text-2xl opacity-90 text-center">{{ system_settings.system_tagline }}</p>
+        {% else %}
+            <p class="text-white text-2xl opacity-90 text-center"></p>
+        {% endif %}
+    </div>
+
+    <div id="input-section" class="w-full max-w-2xl px-4 sm:px-8 visible-input">
+        <form id="login-form" method="post" class="space-y-6">
+            {% csrf_token %}
+            <div>
+                <label class="block text-white text-lg sm:text-xl md:text-2xl font-semibold mb-4 text-center">
+                    <i class="fas fa-id-card mr-2"></i>Enter Student ID
+                </label>
+                <input 
+                    id="student-id-input"
+                    type="text"
+                    name="student_id"
+                    autofocus
+                    class="w-full px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 text-xl sm:text-2xl md:text-3xl text-center border-4 border-white rounded-2xl bg-white bg-opacity-90 focus:bg-opacity-100 focus:outline-none transition"
+                    placeholder="Student ID (e.g. 23-11797)"
+                    autocomplete="off"
+                >
+            </div>
+        </form>
+        <div class="mt-4 status-feedback" id="status-feedback"></div>
+        <div class="mt-8 text-center">
+            <p class="text-white text-sm sm:text-base md:text-lg opacity-75">
+                <i class="fas fa-info-circle mr-2"></i>Scan QR code or tap NFC card to login quickly
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+    <div class="modal-content">
+        <p id="modal-message"></p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const inputField = document.getElementById('student-id-input');
+    const statusFeedback = document.getElementById('status-feedback');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalMessage = document.getElementById('modal-message');
+
+    function maintainFocus() { if (document.activeElement !== inputField) inputField.focus(); }
+    setInterval(maintainFocus, 400);
+
+    function showModal(message) {
+        modalMessage.textContent = message;
+        modalOverlay.style.display = 'flex';
+        setTimeout(() => {
+            modalOverlay.style.display = 'none';
+            inputField.value = '';
+            inputField.classList.remove('ring-red-400','ring-green-400','ring-yellow-400');
+            statusFeedback.textContent = '';
+            inputField.focus();
+        }, 2000);
+    }
+
+    function isStudentIDComplete(studentID) {
+        const pattern = /^\d{2}-\d{5}$/;
+        return pattern.test(studentID.trim());
+    }
+
+    function validateStudentID(studentID) {
+        const cleanID = studentID.trim();
+        fetch(`/validate_student_id/?student_id=${encodeURIComponent(cleanID)}`)
+            .then(res => res.json())
+            .then(data => {
+                inputField.classList.remove('ring-red-400','ring-green-400','ring-yellow-400');
+
+                if(data.valid && data.approved){
+                    inputField.classList.add('ring-4', 'ring-green-400');
+                    statusFeedback.textContent = '✅ Valid ID! Redirecting...';
+                    statusFeedback.className = 'status-feedback text-green-400';
+                    setTimeout(()=>window.location.href=`/pos/options/?student_id=${encodeURIComponent(cleanID)}`,500);
+                } else if(data.valid && !data.approved){
+                    inputField.classList.add('ring-4','ring-red-400');
+                    showModal(data.reason || 'Student not approved.');
+                } else {
+                    inputField.classList.add('ring-4','ring-red-400');
+                    showModal(data.reason || 'Student not found.');
+                }
+            })
+            .catch(err=>{
+                console.error(err);
+                inputField.classList.add('ring-4','ring-yellow-400');
+                statusFeedback.textContent='⚠ Server error';
+                statusFeedback.className='status-feedback text-yellow-400';
+            });
+    }
+
+    let typingTimer = null;
+    inputField.addEventListener('input',()=>{
+        const studentID = inputField.value.trim();
+        if(typingTimer) clearTimeout(typingTimer);
+        if(isStudentIDComplete(studentID)){
+            typingTimer = setTimeout(()=>validateStudentID(studentID), 120);
+        } else {
+            inputField.classList.remove('ring-red-400','ring-green-400','ring-yellow-400');
+            statusFeedback.textContent='';
+        }
+    });
+
+    inputField.addEventListener('keypress',(e)=>{
+        if(e.key==='Enter'){
+            e.preventDefault();
+            const studentID = inputField.value.trim();
+            if(isStudentIDComplete(studentID)) validateStudentID(studentID);
+            else showModal('Please enter your complete Student ID (e.g., 23-11797).');
+        }
+    });
+
+    window.addEventListener('click', maintainFocus);
+    window.addEventListener('focus', maintainFocus);
+    inputField.focus();
+})();
+</script>
+
+{% endblock %}

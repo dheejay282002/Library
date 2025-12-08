@@ -1,0 +1,104 @@
+{% extends 'library/base.html' %}
+{% block title %}Librarian Orders{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">All Orders</h1>
+<table class="min-w-full bg-white rounded shadow">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Student</th>
+            <th>Books</th>
+            <th>Total</th>
+            <th>Payment</th>
+            <th>Address</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.student.username }}</td>
+            <td>
+                {% for item in order.books.all %}
+                    {{ item.book.title }} x{{ item.quantity }}<br>
+                {% endfor %}
+            </td>
+            <td>{{ order.total_price }}</td>
+            <td>{{ order.get_payment_method_display }}</td>
+            <td>{{ order.address }}</td>
+            <td>{{ order.get_status_display }}</td>
+            <td class="space-x-2">
+                {% for st, label in order.STATUS_CHOICES %}
+                    <a href="{% url 'update_order_status' order.id st %}" class="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600">{{ label }}</a>
+                {% endfor %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center text-gray-500">No orders yet.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<script>
+    async function updateOrdersTable() {
+        try {
+            const response = await fetch("{% url 'fetch_orders_librarian' %}");
+            const data = await response.json();
+
+            // Update table rows
+            const tableBody = document.getElementById('ordersTableBody');
+            if (tableBody) tableBody.innerHTML = data.html;
+
+            // Update badge count
+            const badge = document.getElementById('ordersBadge');
+            if (badge) {
+                if (data.pending_orders > 0) {
+                    badge.textContent = data.pending_orders;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+
+            // Rebind status buttons
+            bindStatusButtons();
+
+        } catch (err) {
+            console.error("Error fetching orders:", err);
+        }
+    }
+
+    function bindStatusButtons() {
+        document.querySelectorAll('.update-status-btn').forEach(btn => {
+            btn.onclick = async () => {
+                const orderId = btn.dataset.order;
+                const newStatus = btn.textContent.toLowerCase();
+
+                const resp = await fetch(`/librarian/update-order/${orderId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({status: newStatus})
+                });
+                
+                if (resp.ok) {
+                    updateOrdersTable();
+                }
+            };
+        });
+    }
+
+    // Poll every 10 seconds
+    updateOrdersTable();
+    setInterval(updateOrdersTable, 10000);
+</script>
+
+{% endblock %}

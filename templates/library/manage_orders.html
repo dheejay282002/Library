@@ -1,0 +1,44 @@
+{% extends 'library/base.html' %}
+{% block title %}Manage Orders{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">All Orders</h1>
+
+<table class="min-w-full bg-white shadow rounded-lg overflow-hidden">
+    <thead>
+        <tr class="bg-gray-100 text-left">
+            <th class="px-4 py-2">Order ID</th>
+            <th class="px-4 py-2">Student</th>
+            <th class="px-4 py-2">Total</th>
+            <th class="px-4 py-2">Payment</th>
+            <th class="px-4 py-2">Status</th>
+            <th class="px-4 py-2">Address</th>
+            <th class="px-4 py-2">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr class="border-t">
+            <td class="px-4 py-2">{{ order.id }}</td>
+            <td class="px-4 py-2">{{ order.student.username }}</td>
+            <td class="px-4 py-2">₱{{ order.total_price|floatformat:2 }}</td>
+            <td class="px-4 py-2">{{ order.get_payment_method_display }}</td>
+            <td class="px-4 py-2">{{ order.get_status_display }}</td>
+            <td class="px-4 py-2">{{ order.address }}</td>
+            <td class="px-4 py-2">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <select name="status" class="border rounded px-2 py-1 mb-1">
+                        {% for key, val in order.STATUS_CHOICES %}
+                            <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Update</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

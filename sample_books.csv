@@ -1,4 +1,4 @@
-ISBN,Book Name,Author,Date Published,Category,Pieces,Description
-978-0-134-68599-1,Effective Java,Joshua Bloch,2018,Programming,3,A comprehensive guide to Java programming best practices
-978-0-596-51774-8,Programming Python,Mark Lutz,2010,Programming,2,Powerful object-oriented programming
-978-1-491-95039-8,Fluent Python,Luciano Ramalho,2015,Programming,5,Clear concise and effective programming
+ISBN,Book Name,Author,Date Published,Category,shelf,Pieces,Description
+978-0-134-68599-1,Effective Java,Joshua Bloch,2018,Programming,none,3,A comprehensive guide to Java programming best practices
+978-0-596-51774-8,Programming Python,Mark Lutz,2010,Programming,none,2,Powerful object-oriented programming
+978-1-491-95039-8,Fluent Python,Luciano Ramalho,2015,Programming,none,5,Clear concise and effective programming

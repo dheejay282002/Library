@@ -1,0 +1,58 @@
+{% for student in students %}
+<tr>
+    <td class="px-6 py-4">
+        {% if student.profile_photo %}
+            <img src="{{ student.profile_photo.url }}" alt="{{ student.get_full_name }}" class="w-10 h-10 rounded-full object-cover">
+        {% else %}
+            <div class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center text-white font-semibold text-sm">
+                {{ student.first_name.0 }}{{ student.last_name.0 }}
+            </div>
+        {% endif %}
+    </td>
+
+    <td class="px-6 py-4 text-sm font-mono">{{ student.student_id }}</td>
+
+    <td class="px-6 py-4 text-sm font-semibold">{{ student.get_full_name }}</td>
+
+    <td class="px-6 py-4 text-sm">{{ student.course }}</td>
+
+    <td class="px-6 py-4 text-sm">{{ student.year }} - {{ student.section }}</td>
+
+    <td class="px-6 py-4 text-sm">
+        {% if student.user %}
+            {% if student.is_approved %}
+                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">
+                    <i class="fas fa-check-circle"></i> Approved
+                </span>
+            {% else %}
+                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">
+                    <i class="fas fa-clock"></i> Pending
+                </span>
+            {% endif %}
+        {% else %}
+            <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                <i class="fas fa-user-slash"></i> Not Registered
+            </span>
+        {% endif %}
+    </td>
+
+    <!-- ✅ FIXED ACTIONS COLUMN -->
+    <td class="px-6 py-4 text-sm">
+        <div class="flex items-center gap-3 whitespace-nowrap">
+            <a href="{% url 'edit_student' student.id %}"
+               class="text-blue-600 hover:text-blue-800 inline-flex items-center">
+                <i class="fas fa-edit text-lg"></i>
+            </a>
+
+            <button @click="deleteModal = {{ student.id }}"
+                    class="text-red-600 hover:text-red-800 inline-flex items-center">
+                <i class="fas fa-trash text-lg"></i>
+            </button>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7" class="px-6 py-4 text-center text-gray-500">No students found</td>
+</tr>
+{% endfor %}

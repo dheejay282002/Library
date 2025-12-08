@@ -1,0 +1,35 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Chat with {{ other_user.get_full_name|default:other_user.username }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-6 flex flex-col h-[80vh]">
+    <h1 class="text-xl font-bold mb-4">Chat with {{ other_user.get_full_name|default:other_user.username }}</h1>
+
+    <!-- Messages -->
+    <div id="messages" class="flex-1 overflow-y-auto mb-4 space-y-2">
+        {% for msg in messages %}
+            <div class="flex {% if msg.sender == user %}justify-end{% else %}justify-start{% endif %}">
+                <div class="p-2 rounded-lg max-w-xs {% if msg.sender == user %}bg-blue-600 text-white{% else %}bg-gray-200{% endif %}">
+                    <p>{{ msg.content }}</p>
+                    <span class="text-xs text-gray-500">{{ msg.timestamp|date:"H:i" }}</span>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-center text-gray-500 mt-4">No messages yet.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Send Message -->
+    <form method="post" class="flex space-x-2">
+        {% csrf_token %}
+        <input type="text" name="content" placeholder="Type a message..." class="flex-1 border rounded-lg px-3 py-2">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Send</button>
+    </form>
+</div>
+
+<script>
+let messagesDiv = document.getElementById('messages');
+messagesDiv.scrollTop = messagesDiv.scrollHeight;  // auto-scroll
+</script>
+{% endblock %}

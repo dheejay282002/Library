@@ -1,0 +1,233 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Library Status Banner -->
+{% if library_status %}
+<div class="mb-6">
+    <div class="rounded-xl p-5 border-l-8 
+        {% if library_status.status == 'open' %}
+            bg-green-50 border-green-500 text-green-800
+        {% elif library_status.status == 'closed' %}
+            bg-red-50 border-red-500 text-red-800
+        {% elif library_status.status == 'maintenance' %}
+            bg-yellow-50 border-yellow-500 text-yellow-800
+        {% elif library_status.status == 'holiday' %}
+            bg-blue-50 border-blue-500 text-blue-800
+        {% endif %}">
+        <div class="flex justify-between items-start">
+            <div>
+                <h2 class="text-xl font-semibold">
+                    <i class="fas fa-university mr-2"></i>
+                    Library Status: {{ library_status.get_status_display }}
+                </h2>
+                {% if library_status.comment %}
+                    <p class="mt-1 text-sm leading-relaxed">{{ library_status.comment }}</p>
+                {% endif %}
+            </div>
+            <!-- Removed the updated_at timestamp -->
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- Profile Header -->
+<div class="mb-8">
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="flex items-center space-x-4">
+            {% if student.profile_photo %}
+                <img src="{{ student.profile_photo.url }}" alt="Profile" class="w-20 h-20 rounded-full object-cover border-5 border-green-900">
+            {% else %}
+                <div class="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                    {{ student.first_name.0 }}{{ student.last_name.0 }}
+                </div>
+            {% endif %}
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-800">Welcome, {{ student.first_name }}!</h1>
+                <p class="text-gray-600 text-lg">{{ student.course }} - {{ student.year }} {{ student.section }}</p>
+                <p class="text-gray-500 text-sm mt-1">Student ID: {{ student.student_id }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Quick Stats -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-blue-900 to-blue-600 text-white rounded-lg shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-blue-100 text-sm">Currently Borrowed</p>
+                <p class="text-3xl font-bold">{{ borrowed_books|length }}</p>
+            </div>
+            <i class="fas fa-book-open text-4xl opacity-75"></i>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-green-900 to-green-600 text-white rounded-lg shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-green-100 text-sm">Total Transactions</p>
+                <p class="text-3xl font-bold">{{ history|length }}</p>
+            </div>
+            <i class="fas fa-history text-4xl opacity-75"></i>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-purple-900 to-purple-600 text-white rounded-lg shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-purple-100 text-sm">Books Returned</p>
+                <p class="text-3xl font-bold">{{ returned_count|default:"0" }}</p>
+            </div>
+            <i class="fas fa-check-circle text-4xl opacity-75"></i>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-orange-900 to-orange-600 text-white rounded-lg shadow-lg p-6">
+        <a href="{% url 'student_books' %}" class="block">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-orange-100 text-sm">Browse Books</p>
+                    <p class="text-xl font-bold">View All</p>
+                </div>
+                <i class="fas fa-arrow-right text-4xl opacity-75"></i>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Currently Borrowed Books -->
+<div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">
+        <i class="fas fa-book-open mr-2 text-blue-600"></i>Currently Borrowed Books
+    </h2>
+    {% if borrowed_books %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {% for transaction in borrowed_books %}
+                <div class="border-2 border-blue-500 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-mono bg-blue-100 text-blue-800 px-3 py-1 rounded">
+                            {{ transaction.transaction_code }}
+                        </span>
+                        <span class="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded font-semibold">
+                            Due: {{ transaction.due_date|date:"M d, Y" }}
+                        </span>
+                    </div>
+                    
+                    {% for item in transaction.items.all %}
+                        <div class="flex items-start space-x-3 mb-2">
+                            {% if item.book.book_cover %}
+                                <img src="{{ item.book.book_cover.url }}" alt="{{ item.book.title }}" class="w-12 h-16 object-cover rounded shadow-sm">
+                            {% else %}
+                                <div class="w-12 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded flex items-center justify-center">
+                                    <i class="fas fa-book text-white"></i>
+                                </div>
+                            {% endif %}
+                            <div class="flex-1">
+                                <p class="font-bold text-gray-800">{{ item.book.title }}</p>
+                                <p class="text-sm text-gray-600">by {{ item.book.author }}</p>
+                                <p class="text-xs text-gray-500">ISBN: {{ item.book.isbn }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <p class="text-xs text-gray-500 mt-3">
+                        Borrowed: {{ transaction.borrowed_date|date:"M d, Y" }}
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12 bg-gray-50 rounded-lg">
+            <i class="fas fa-book text-6xl text-gray-300 mb-4"></i>
+            <p class="text-xl text-gray-500">No books currently borrowed</p>
+            <a href="{% url 'student_books' %}" class="inline-block mt-4 bg-blue-900 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-search mr-2"></i>Browse Available Books
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Transaction History with Toggle -->
+<div class="bg-white rounded-lg shadow-lg p-6" x-data="{ filter: 'all' }">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-history mr-2 text-green-600"></i>Transaction History
+        </h2>
+        
+        <div class="flex gap-2 bg-gray-100 rounded-lg p-1">
+            <button @click="filter = 'all'" 
+                    :class="filter === 'all' ? 'bg-white shadow' : 'bg-transparent'"
+                    class="px-4 py-2 rounded-md font-semibold text-sm transition">
+                <i class="fas fa-list mr-1"></i>All
+            </button>
+            <button @click="filter = 'borrowed'" 
+                    :class="filter === 'borrowed' ? 'bg-white shadow' : 'bg-transparent'"
+                    class="px-4 py-2 rounded-md font-semibold text-sm transition">
+                <i class="fas fa-book-open mr-1 text-blue-600"></i>Borrowed
+            </button>
+            <button @click="filter = 'returned'" 
+                    :class="filter === 'returned' ? 'bg-white shadow' : 'bg-transparent'"
+                    class="px-4 py-2 rounded-md font-semibold text-sm transition">
+                <i class="fas fa-check-circle mr-1 text-green-600"></i>Returned
+            </button>
+        </div>
+    </div>
+    
+    {% if history %}
+        <div class="space-y-3">
+            {% for transaction in history|slice:":10" %}
+                <div x-show="filter === 'all' || filter === '{{ transaction.status }}'" 
+                     class="border-l-4 {% if transaction.status == 'returned' %}border-green-500{% else %}border-blue-500{% endif %} pl-4 py-3 bg-gray-50 rounded-r-lg">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-xs font-mono bg-gray-200 text-gray-700 px-2 py-1 rounded">
+                                    {{ transaction.transaction_code }}
+                                </span>
+                                <span class="text-xs {% if transaction.status == 'returned' %}bg-green-100 text-green-800{% else %}bg-blue-100 text-blue-800{% endif %} px-3 py-1 rounded-full font-semibold">
+                                    <i class="fas {% if transaction.status == 'returned' %}fa-check-circle{% else %}fa-book-open{% endif %} mr-1"></i>
+                                    {{ transaction.status|title }}
+                                </span>
+                            </div>
+                            
+                            <p class="text-sm text-gray-700 font-semibold">
+                                {{ transaction.items.count }} book(s) - 
+                                Borrowed: {{ transaction.borrowed_date|date:"M d, Y" }}
+                            </p>
+                            
+                            {% if transaction.status == 'returned' and transaction.return_date %}
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Returned: {{ transaction.return_date|date:"M d, Y" }}
+                                </p>
+                            {% elif transaction.status == 'borrowed' %}
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Due: {{ transaction.due_date|date:"M d, Y" }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if history|length > 10 %}
+        <p class="text-center text-sm text-gray-500 mt-4">
+            Showing 10 most recent transactions
+        </p>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-inbox text-4xl mb-3 block"></i>
+            <p>No transaction history yet</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

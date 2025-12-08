@@ -5,6 +5,33 @@ import random
 import string
 from datetime import timedelta
 
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import models
+
+from django.db import models
+
+# ---------------------------
+#LIBRARY STATUS
+# Ito yung para sa librarian at students, 
+# ito yung process dun para magpakita yung Open, 
+# close, maintenance, or kung holiday man dun sa students dashboard
+#parang ito yung control niya sa backend
+# ---------------------------
+class LibraryStatus(models.Model):
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('closed', 'Closed'),
+        ('maintenance', 'Maintenance'),
+        ('holiday', 'Holiday')
+    ]
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    comment = models.TextField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.status} ({self.updated_at})"
 
 class UserManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -48,43 +75,57 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
 
-
+# ---------------------------
+# itong class student is parang ito yung magsisilbing way to yung mga information nila 
+#inside the database
+# ---------------------------
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     student_id = models.CharField(max_length=50, unique=True)
     last_name = models.CharField(max_length=100)
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True)
+    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
     course = models.CharField(max_length=100)
     year = models.CharField(max_length=20)
     section = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     profile_photo = models.ImageField(upload_to='profile_photos/', blank=True, null=True)
+    # New fields
+    birthday = models.DateField(blank=True, null=True)
+    address = models.CharField(max_length=255)
+    current_address = models.CharField(max_length=255)
+    guardian_name = models.CharField(max_length=100)
+    
     is_verified = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f"{self.student_id} - {self.last_name}, {self.first_name}"
-    
+
     def get_full_name(self):
         if self.middle_name:
             return f"{self.last_name}, {self.first_name} {self.middle_name}"
         return f"{self.last_name}, {self.first_name}"
-    
+
     class Meta:
         verbose_name = 'Student'
         verbose_name_plural = 'Students'
+
 
 #hide transactions
 def delete_old_returned_transactions():
     cutoff = timezone.now() - timedelta(minutes=1)
     Transaction.objects.filter(status='returned', return_date__lte=cutoff).delete()
+
 class Book(models.Model):
     isbn = models.CharField(max_length=20, unique=True)
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=200)
     category = models.CharField(max_length=100)
+    shelf = models.CharField(max_length=50, blank=True, null=True)  # <-- new field
     publisher = models.CharField(max_length=200, blank=True)
     year_published = models.IntegerField(blank=True, null=True)
     copies_total = models.IntegerField(default=1)
@@ -177,10 +218,10 @@ class TransactionItem(models.Model):
 
 
 class VerificationCode(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    code = models.CharField(max_length=6)
+    student = models.ForeignKey('Student', on_delete=models.CASCADE)
+    code = models.CharField(max_length=6, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
+    expires_at = models.DateTimeField(blank=True, null=True)
     is_used = models.BooleanField(default=False)
     
     def __str__(self):
@@ -197,13 +238,12 @@ class VerificationCode(models.Model):
         if not self.code:
             self.code = self.generate_code()
         if not self.expires_at:
-            self.expires_at = timezone.now() + timedelta(minutes=15)
+            self.expires_at = timezone.now() + timedelta(minutes=5)  # ✅ 5-minute expiry
         super().save(*args, **kwargs)
     
     class Meta:
         verbose_name = 'Verification Code'
         verbose_name_plural = 'Verification Codes'
-
 
 class Librarian(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -237,6 +277,8 @@ class POS(models.Model):
 
 class SystemSettings(models.Model):
     system_name = models.CharField(max_length=200, default='Library Management System')
+    system_tagline = models.CharField(max_length=200, default='Library Management System')
+
     system_logo = models.ImageField(upload_to='system/', blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -285,3 +327,11 @@ class AdminLog(models.Model):
         verbose_name = 'Admin Log'
         verbose_name_plural = 'Admin Logs'
         ordering = ['-timestamp']
+
+
+
+
+
+# ==========================================================
+#  CHAT SYSTEM MODELS
+# ========================================================

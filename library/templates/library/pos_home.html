@@ -1,21 +1,360 @@
 {% extends 'library/base.html' %}
+{% load static %}
 
-{% block title %}POS System{% endblock %}
+{% block title %}POS System - Student Login{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center -mt-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-        <a href="{% url 'pos_borrow_book' %}" class="bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-2xl shadow-2xl p-12 text-center transition transform hover:scale-105">
-            <i class="fas fa-book-reader text-6xl mb-6"></i>
-            <h2 class="text-3xl font-bold">Borrow Book</h2>
-            <p class="mt-4 text-green-100">Process book borrowing transactions</p>
-        </a>
-        
-        <a href="{% url 'pos_return_book' %}" class="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl shadow-2xl p-12 text-center transition transform hover:scale-105">
-            <i class="fas fa-undo-alt text-6xl mb-6"></i>
-            <h2 class="text-3xl font-bold">Return Book</h2>
-            <p class="mt-4 text-blue-100">Process book return transactions</p>
-        </a>
+<style>
+body { margin:0; overflow:hidden; }
+
+/* Background */
+.fullscreen-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center; /* changed from flex-end to center */
+    /* padding-bottom: 10vh;  remove this */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    z-index: 1;
+}
+
+
+/* Glass Card */
+.transparent-card {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(18px);
+    border: 2px solid rgba(255,255,255,0.25);
+    border-radius: 1.5rem;
+    padding: 3rem 2rem;
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.3);
+}
+
+/* Logo */
+.logo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+.logo-section img {
+    width: clamp(6rem, 12vw, 10rem);
+    height: clamp(6rem, 12vw, 10rem);
+    object-fit: contain;
+    margin-bottom: 1rem;
+    animation: pulse 2s infinite;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35));
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+/* Titles */
+h1 {
+    color: white;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.logo-section p {
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    color: rgba(255,255,255,0.9);
+}
+
+/* Input */
+.relative { position: relative; }
+
+#student-id-input {
+    width: 100%;
+    font-size: clamp(1rem, 2.5vw, 1.6rem);
+    padding-left: clamp(3rem, 6vw, 4rem);
+    padding-right: clamp(1rem, 3vw, 2rem);
+    padding-top: clamp(0.75rem, 2vw, 1.2rem);
+    padding-bottom: clamp(0.75rem, 2vw, 1.2rem);
+    border: clamp(3px, 0.6vw, 4px) solid white !important;
+    border-radius: clamp(0.75rem, 2vw, 1.5rem);
+    background: rgba(255, 255, 255, 0.95);
+    text-align: center;
+    color: #222;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    box-sizing: border-box;
+}
+#student-id-input::placeholder { color: #6b7280; opacity: 0.9; }
+
+.relative i.fas.fa-id-card {
+    left: clamp(0.75rem, 2vw, 1.5rem);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    color: #9ca3af;
+    position: absolute;
+    pointer-events: none;
+}
+
+/* Border color states */
+#student-id-input[data-state="idle"] { border-color: white !important; box-shadow: none !important; }
+#student-id-input[data-state="typing"] { border-color: #f87171 !important; box-shadow: 0 0 8px rgba(248,113,113,0.18) !important; }
+#student-id-input[data-state="valid"] { border-color: #22c55e !important; box-shadow: 0 0 10px rgba(34,197,94,0.28) !important; }
+#student-id-input[data-state="invalid"] { border-color: #f87171 !important; box-shadow: 0 0 8px rgba(248,113,113,0.18) !important; }
+#student-id-input[data-state="error"] { border-color: #facc15 !important; box-shadow: 0 0 10px rgba(250,204,21,0.25) !important; }
+
+/* Status feedback */
+.status-feedback {
+    margin-top: 1rem;
+    font-weight: bold;
+    text-align: center;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    min-height: 1.2em;
+    color: white;
+}
+
+/* Spinner */
+.spinner {
+    display: inline-block;
+    width: 1.4em;
+    height: 1.4em;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #22c55e;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.5em;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); /* dark overlay behind */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    display: none;
+}
+
+/* Only the modal itself has glass effect */
+.modal-content {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 1.5rem;
+    padding: 2.5rem 2rem;
+    max-width: 420px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    animation: fadeInScale 0.25s ease;
+}
+
+/* Alert icon */
+.modal-content .alert-icon {
+    font-size: 3rem;
+    color: #facc15;
+    margin-bottom: 1rem;
+    animation: pulse 1.5s infinite;
+}
+
+/* Animations */
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+</style>
+
+<div class="fullscreen-container" style="background-image: url('{% static 'images/bg1.jpg' %}');">
+    <div class="transparent-card">
+        <div class="logo-section">
+            {% if system_settings.system_logo %}
+                <img src="{{ system_settings.system_logo.url }}" alt="{{ system_settings.system_name|default:'Library POS' }}">
+            {% else %}
+                <img src="{% static 'images/default_logo.png' %}" alt="Library POS">
+            {% endif %}
+            <h1>{{ system_settings.system_name|default:"Library POS" }}</h1>
+            {% if system_settings.system_tagline %}
+                <p>{{ system_settings.system_tagline }}</p>
+            {% endif %}
+        </div>
+
+        <div id="input-section" class="visible-input">
+            <form id="login-form" method="post" class="space-y-6" onsubmit="return false;">
+                {% csrf_token %}
+                <div class="relative w-full">
+                    <i class="fas fa-id-card"></i>
+                    <input
+                        id="student-id-input"
+                        type="text"
+                        name="student_id"
+                        autofocus
+                        placeholder="Student ID (e.g. 23-11797)"
+                        autocomplete="off"
+                        data-state="idle"
+                        inputmode="numeric"
+                        aria-label="Student ID"
+                    >
+                </div>
+            </form>
+
+            <div class="status-feedback" id="status-feedback"></div>
+            <div class="mt-6 text-center">
+                <p class="text-white opacity-80 text-sm sm:text-base md:text-lg">
+                    <i class="fas fa-info-circle mr-2"></i>Scan QR code or tap NFC card to login quickly
+                </p>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content">
+        <i class="fas fa-exclamation-triangle alert-icon"></i>
+        <p id="modal-message"></p>
+    </div>
+</div>
+
+</div>
+
+<script>
+(function() {
+    const inputField = document.getElementById('student-id-input');
+    const statusFeedback = document.getElementById('status-feedback');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalMessage = document.getElementById('modal-message');
+
+    function maintainFocus() {
+        if (document.activeElement !== inputField) inputField.focus();
+    }
+    setInterval(maintainFocus, 500);
+
+    function showModal(message) {
+        modalMessage.textContent = message;
+        modalOverlay.style.display = 'flex';
+        setTimeout(() => {
+            modalOverlay.style.display = 'none';
+            inputField.value = '';
+            inputField.setAttribute('data-state', 'idle');
+            statusFeedback.textContent = '';
+            inputField.focus();
+        }, 3000);
+    }
+
+    function isStudentIDComplete(studentID) {
+        const pattern = /^\d{2}-\d{5}$/;
+        return pattern.test(studentID.trim());
+    }
+
+    function setState(state) {
+        inputField.setAttribute('data-state', state);
+        switch(state) {
+            case 'valid':
+                statusFeedback.innerHTML = `<span class="spinner"></span>Verifying...`;
+                statusFeedback.style.color = '#22c55e';
+                break;
+            case 'invalid':
+                statusFeedback.textContent = '❌ Invalid ID';
+                statusFeedback.style.color = '#f87171';
+                break;
+            case 'typing':
+                statusFeedback.textContent = '';
+                break;
+            case 'error':
+                statusFeedback.textContent = '⚠ Server error';
+                statusFeedback.style.color = '#facc15';
+                break;
+            default:
+                statusFeedback.textContent = '';
+        }
+    }
+
+    function validateStudentID(studentID) {
+        const cleanID = studentID.trim();
+        fetch(`/validate_student_id/?student_id=${encodeURIComponent(cleanID)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.valid && data.approved) {
+                    setState('valid');
+                    setTimeout(() => {
+                        window.location.href = `/pos/options/?student_id=${encodeURIComponent(cleanID)}`;
+                    }, 800);
+                } else if (data.valid && !data.approved) {
+                    setState('invalid');
+                    showModal(data.reason || 'Student not approved.');
+                } else {
+                    setState('invalid');
+                    showModal(data.reason || 'Student not found.');
+                }
+            })
+            .catch(() => setState('error'));
+    }
+
+    let typingTimer = null;
+    inputField.addEventListener('input', () => {
+        const studentID = inputField.value.trim();
+        if (!studentID) {
+            setState('idle');
+            return;
+        }
+        if (!isStudentIDComplete(studentID)) {
+            setState('typing');
+            if (typingTimer) clearTimeout(typingTimer);
+        } else {
+            if (typingTimer) clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => validateStudentID(studentID), 150);
+        }
+    });
+
+    inputField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const id = inputField.value.trim();
+            if (isStudentIDComplete(id)) validateStudentID(id);
+            else showModal('Please enter your complete Student ID (e.g., 23-11797).');
+        }
+    });
+
+    window.addEventListener('click', maintainFocus);
+    window.addEventListener('focus', maintainFocus);
+    inputField.focus();
+})();
+</script>
+
+<!-- ✅ FIXED FULLSCREEN SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    function openFullscreen() {
+        const element = document.documentElement;
+
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+    }
+
+    // ✅ Give it a slight delay for safety
+    setTimeout(openFullscreen, 300);
+});
+</script>
+
 {% endblock %}

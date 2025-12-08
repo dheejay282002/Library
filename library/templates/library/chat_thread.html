@@ -1,0 +1,24 @@
+{% extends 'library/base.html' %}
+{% block title %}Chats{% endblock %}
+{% block content %}
+
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow p-6">
+    <h2 class="text-xl font-bold mb-4">Your Chats</h2>
+
+    {% for thread in threads %}
+        <a href="{% url 'chat_thread' thread.id %}" class="flex items-center justify-between p-3 hover:bg-gray-100 rounded-lg">
+            <div>
+                <p class="font-semibold text-gray-800">
+                    {{ thread.other.username }}
+                </p>
+                <p class="text-sm text-gray-500">
+                    Last updated: {{ thread.updated_at|date:"M d, H:i" }}
+                </p>
+            </div>
+        </a>
+    {% empty %}
+        <p class="text-gray-500 text-center">No chat threads yet.</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

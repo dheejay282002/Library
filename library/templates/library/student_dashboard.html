@@ -3,12 +3,43 @@
 {% block title %}Student Dashboard{% endblock %}
 
 {% block content %}
+
+<!-- Library Status Banner -->
+{% if library_status %}
+<div class="mb-6">
+    <div class="rounded-xl p-5 border-l-8 
+        {% if library_status.status == 'open' %}
+            bg-green-50 border-green-500 text-green-800
+        {% elif library_status.status == 'closed' %}
+            bg-red-50 border-red-500 text-red-800
+        {% elif library_status.status == 'maintenance' %}
+            bg-yellow-50 border-yellow-500 text-yellow-800
+        {% elif library_status.status == 'holiday' %}
+            bg-blue-50 border-blue-500 text-blue-800
+        {% endif %}">
+        <div class="flex justify-between items-start">
+            <div>
+                <h2 class="text-xl font-semibold">
+                    <i class="fas fa-university mr-2"></i>
+                    Library Status: {{ library_status.get_status_display }}
+                </h2>
+                {% if library_status.comment %}
+                    <p class="mt-1 text-sm leading-relaxed">{{ library_status.comment }}</p>
+                {% endif %}
+            </div>
+            <!-- Removed the updated_at timestamp -->
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
 <!-- Profile Header -->
 <div class="mb-8">
     <div class="bg-white rounded-lg shadow-lg p-6">
         <div class="flex items-center space-x-4">
             {% if student.profile_photo %}
-                <img src="{{ student.profile_photo.url }}" alt="Profile" class="w-20 h-20 rounded-full object-cover border-4 border-blue-500">
+                <img src="{{ student.profile_photo.url }}" alt="Profile" class="w-20 h-20 rounded-full object-cover border-5 border-green-900">
             {% else %}
                 <div class="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">
                     {{ student.first_name.0 }}{{ student.last_name.0 }}
@@ -23,9 +54,12 @@
     </div>
 </div>
 
+
+
+
 <!-- Quick Stats -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
+    <div class="bg-gradient-to-br from-blue-900 to-blue-600 text-white rounded-lg shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-blue-100 text-sm">Currently Borrowed</p>
@@ -35,7 +69,7 @@
         </div>
     </div>
     
-    <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
+    <div class="bg-gradient-to-br from-green-900 to-green-600 text-white rounded-lg shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-green-100 text-sm">Total Transactions</p>
@@ -45,7 +79,7 @@
         </div>
     </div>
     
-    <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg shadow-lg p-6">
+    <div class="bg-gradient-to-br from-purple-900 to-purple-600 text-white rounded-lg shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-purple-100 text-sm">Books Returned</p>
@@ -55,7 +89,7 @@
         </div>
     </div>
     
-    <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg shadow-lg p-6">
+    <div class="bg-gradient-to-br from-orange-900 to-orange-600 text-white rounded-lg shadow-lg p-6">
         <a href="{% url 'student_books' %}" class="block">
             <div class="flex items-center justify-between">
                 <div>
@@ -98,6 +132,8 @@
                             <div class="flex-1">
                                 <p class="font-bold text-gray-800">{{ item.book.title }}</p>
                                 <p class="text-sm text-gray-600">by {{ item.book.author }}</p>
+                                <p class="text-sm text-gray-600">Shelf {{ item.book.shelf  }}</p>
+
                                 <p class="text-xs text-gray-500">ISBN: {{ item.book.isbn }}</p>
                             </div>
                         </div>
@@ -113,7 +149,7 @@
         <div class="text-center py-12 bg-gray-50 rounded-lg">
             <i class="fas fa-book text-6xl text-gray-300 mb-4"></i>
             <p class="text-xl text-gray-500">No books currently borrowed</p>
-            <a href="{% url 'student_books' %}" class="inline-block mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+            <a href="{% url 'student_books' %}" class="inline-block mt-4 bg-blue-900 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
                 <i class="fas fa-search mr-2"></i>Browse Available Books
             </a>
         </div>
@@ -127,7 +163,6 @@
             <i class="fas fa-history mr-2 text-green-600"></i>Transaction History
         </h2>
         
-        <!-- Toggle Buttons -->
         <div class="flex gap-2 bg-gray-100 rounded-lg p-1">
             <button @click="filter = 'all'" 
                     :class="filter === 'all' ? 'bg-white shadow' : 'bg-transparent'"
@@ -196,4 +231,5 @@
         </div>
     {% endif %}
 </div>
+
 {% endblock %}
