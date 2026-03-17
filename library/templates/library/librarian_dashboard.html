@@ -126,6 +126,45 @@
         </a>
     </div>
 
+    <!-- Analytics Charts -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-chart-bar mr-2 text-blue-600"></i>Most Borrowed Books
+            </h2>
+            <div class="h-80">
+                <canvas id="topBorrowedBooksChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-layer-group mr-2 text-green-600"></i>Borrowing by Category
+            </h2>
+            <div class="h-80">
+                <canvas id="categoryBorrowChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-chart-line mr-2 text-indigo-600"></i>Monthly Borrowing Trend
+            </h2>
+            <div class="h-80">
+                <canvas id="monthlyBorrowingChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-chart-pie mr-2 text-orange-600"></i>Borrow Status Split
+            </h2>
+            <div class="h-80">
+                <canvas id="borrowStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Transactions -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="bg-gray-100 px-6 py-4 border-b">
@@ -172,4 +211,96 @@
         </div>
     </div>
 </div>
+
+{{ top_borrowed_books_labels|json_script:"top-borrowed-labels" }}
+{{ top_borrowed_books_values|json_script:"top-borrowed-values" }}
+{{ category_labels|json_script:"category-labels" }}
+{{ category_values|json_script:"category-values" }}
+{{ monthly_labels|json_script:"monthly-labels" }}
+{{ monthly_values|json_script:"monthly-values" }}
+{{ status_labels|json_script:"status-labels" }}
+{{ status_values|json_script:"status-values" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const topBorrowedBooksLabels = JSON.parse(document.getElementById('top-borrowed-labels').textContent);
+    const topBorrowedBooksValues = JSON.parse(document.getElementById('top-borrowed-values').textContent);
+    const categoryLabels = JSON.parse(document.getElementById('category-labels').textContent);
+    const categoryValues = JSON.parse(document.getElementById('category-values').textContent);
+    const monthlyLabels = JSON.parse(document.getElementById('monthly-labels').textContent);
+    const monthlyValues = JSON.parse(document.getElementById('monthly-values').textContent);
+    const statusLabels = JSON.parse(document.getElementById('status-labels').textContent);
+    const statusValues = JSON.parse(document.getElementById('status-values').textContent);
+
+    new Chart(document.getElementById('topBorrowedBooksChart'), {
+        type: 'bar',
+        data: {
+            labels: topBorrowedBooksLabels,
+            datasets: [{
+                label: 'Times Borrowed',
+                data: topBorrowedBooksValues,
+                backgroundColor: '#2563eb',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    new Chart(document.getElementById('categoryBorrowChart'), {
+        type: 'doughnut',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryValues,
+                backgroundColor: ['#059669', '#2563eb', '#7c3aed', '#f59e0b', '#ef4444', '#14b8a6']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    new Chart(document.getElementById('monthlyBorrowingChart'), {
+        type: 'line',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Approved Transactions',
+                data: monthlyValues,
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.15)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    new Chart(document.getElementById('borrowStatusChart'), {
+        type: 'pie',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusValues,
+                backgroundColor: ['#ea580c', '#16a34a']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+</script>
 {% endblock %}

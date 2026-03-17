@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.db.utils import OperationalError, ProgrammingError
 from django.utils import timezone
 import random
 import string
@@ -291,8 +292,16 @@ class SystemSettings(models.Model):
     
     @classmethod
     def get_settings(cls):
-        settings, created = cls.objects.get_or_create(id=1)
-        return settings
+        try:
+            settings, created = cls.objects.get_or_create(id=1)
+            return settings
+        except (OperationalError, ProgrammingError):
+            # Fallback when migrations are not yet applied (e.g., missing system_tagline).
+            return cls(
+                id=1,
+                system_name='Library Management System',
+                system_tagline='Library Management System',
+            )
 
 
 class AdminLog(models.Model):

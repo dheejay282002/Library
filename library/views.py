@@ -11,6 +11,7 @@ from datetime import timedelta
 from django.db.models import Sum
 from django.shortcuts import render, redirect
 from django.db.models import Sum, Count, Q
+from django.db.models.functions import TruncMonth
 from .models import Book, Student, TransactionItem, Transaction
 from django.contrib.auth.hashers import make_password
 from django.db import models
@@ -1811,6 +1812,55 @@ def librarian_dashboard(request):
     ).prefetch_related(
         'items__book'
     ).order_by('-borrowed_date')[:10]
+
+    # Analytics: top borrowed books (approved transactions only)
+    top_borrowed_books_qs = Book.objects.annotate(
+        borrowed_count=Count(
+            'transactionitem',
+            filter=Q(transactionitem__transaction__approval_status='approved')
+        )
+    ).filter(
+        borrowed_count__gt=0
+    ).order_by('-borrowed_count', 'title')[:7]
+
+    top_borrowed_books_labels = [book.title for book in top_borrowed_books_qs]
+    top_borrowed_books_values = [book.borrowed_count for book in top_borrowed_books_qs]
+
+    # Analytics: borrow distribution by category
+    category_borrow_stats = list(
+        TransactionItem.objects.filter(
+            transaction__approval_status='approved'
+        ).values('book__category').annotate(
+            total=Count('id')
+        ).order_by('-total')[:6]
+    )
+    category_labels = [item['book__category'] or 'Uncategorized' for item in category_borrow_stats]
+    category_values = [item['total'] for item in category_borrow_stats]
+
+    # Analytics: monthly borrowing trend (last ~6 months)
+    trend_start = timezone.now() - timedelta(days=180)
+    monthly_borrowing_stats = list(
+        Transaction.objects.filter(
+            approval_status='approved',
+            borrowed_date__gte=trend_start
+        ).annotate(
+            month=TruncMonth('borrowed_date')
+        ).values('month').annotate(
+            total=Count('id')
+        ).order_by('month')
+    )
+    monthly_labels = [item['month'].strftime('%b %Y') for item in monthly_borrowing_stats if item['month']]
+    monthly_values = [item['total'] for item in monthly_borrowing_stats]
+
+    # Analytics: current approved transaction item statuses
+    status_borrowed = TransactionItem.objects.filter(
+        transaction__approval_status='approved',
+        status='borrowed'
+    ).count()
+    status_returned = TransactionItem.objects.filter(
+        transaction__approval_status='approved',
+        status='returned'
+    ).count()
     
     context = {
         'total_students': total_students,
@@ -1819,7 +1869,15 @@ def librarian_dashboard(request):
         'total_available': total_available,
         'pending_registrations': pending_registrations,
         'pending_borrowing': pending_borrowing,
-        'recent_transactions': recent_transactions
+        'recent_transactions': recent_transactions,
+        'top_borrowed_books_labels': top_borrowed_books_labels,
+        'top_borrowed_books_values': top_borrowed_books_values,
+        'category_labels': category_labels,
+        'category_values': category_values,
+        'monthly_labels': monthly_labels,
+        'monthly_values': monthly_values,
+        'status_labels': ['Borrowed', 'Returned'],
+        'status_values': [status_borrowed, status_returned],
     }
     
     return render(request, 'library/librarian_dashboard.html', context)

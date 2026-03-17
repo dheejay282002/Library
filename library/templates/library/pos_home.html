@@ -1,360 +1,435 @@
-{% extends 'library/base.html' %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ system_settings.system_name|default:"POS System" }} - Login</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-{% block title %}POS System - Student Login{% endblock %}
+    <style>
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            margin: 0; padding: 0; overflow: hidden;
+            font-family: 'Inter', sans-serif; background-color: #0f172a; color: white;
+            height: 100vh; width: 100vw; display: flex; flex-direction: column;
+        }
 
-{% block content %}
-<style>
-body { margin:0; overflow:hidden; }
+        /* --- HEADER --- */
+        .top-header {
+            height: 60px; background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px); display: flex; justify-content: space-between; align-items: center;
+            padding: 0 1.5rem; color: white; border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 50; flex-shrink: 0;
+        }
+        .header-brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; text-transform: uppercase; }
+        .header-logo-img { height: 32px; width: auto; object-fit: contain; }
+        .terminal-badge { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; color: #94a3b8; margin-left: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); }
+        .header-clock { text-align: center; line-height: 1.2; position: absolute; left: 50%; transform: translateX(-50%); }
+        .clock-time { font-size: 1.1rem; font-weight: 700; color: white; letter-spacing: 1px; }
+        .clock-date { font-size: 0.65rem; color: #cbd5e1; text-transform: uppercase; font-weight: 600; }
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+        .user-info { text-align: right; }
+        .user-role { font-size: 0.65rem; color: #94a3b8; display: block; text-transform: uppercase; font-weight: 700; }
+        .user-name { font-size: 0.9rem; font-weight: 600; color: white; }
+        .power-btn { background: rgba(239, 68, 68, 0.8); backdrop-filter: blur(4px); color: white; border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .power-btn:hover { background: #dc2626; transform: scale(1.05); }
 
-/* Background */
-.fullscreen-container {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center; /* changed from flex-end to center */
-    /* padding-bottom: 10vh;  remove this */
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-size: cover;
-    z-index: 1;
-}
+        /* --- MAIN LAYOUT --- */
+        .main-container {
+            display: flex; flex: 1; height: calc(100vh - 60px); width: 100vw;
+            position: relative;
+        }
 
+        /* --- BACKGROUND SLIDESHOW --- */
+        .slideshow {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+        }
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            opacity: 0;
+            animation: fadeLoop 18s infinite; /* 3 images * 6s each */
+        }
+        
+        .slide:nth-child(1) { background-image: url('{% static 'images/bg1.jpg' %}'); animation-delay: 0s; }
+        .slide:nth-child(2) { background-image: url('{% static 'images/bg2.jpg' %}'); animation-delay: 6s; }
+        .slide:nth-child(3) { background-image: url('{% static 'images/bg3.jpg' %}'); animation-delay: 12s; }
 
-/* Glass Card */
-.transparent-card {
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(18px);
-    border: 2px solid rgba(255,255,255,0.25);
-    border-radius: 1.5rem;
-    padding: 3rem 2rem;
-    width: 90%;
-    max-width: 600px;
-    text-align: center;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.3);
-}
+        @keyframes fadeLoop {
+            0% { opacity: 0; transform: scale(1.05); }
+            10% { opacity: 1; transform: scale(1); }
+            33% { opacity: 1; transform: scale(1); } 
+            43% { opacity: 0; }
+            100% { opacity: 0; }
+        }
 
-/* Logo */
-.logo-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-.logo-section img {
-    width: clamp(6rem, 12vw, 10rem);
-    height: clamp(6rem, 12vw, 10rem);
-    object-fit: contain;
-    margin-bottom: 1rem;
-    animation: pulse 2s infinite;
-    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35));
-}
+        .bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); pointer-events: none; z-index: 1; }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
-}
+        /* LOGIN SIDEBAR */
+        .login-sidebar {
+            width: 450px; min-width: 380px; height: 100%; margin-left: auto;
+            background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.15); box-shadow: -10px 0 50px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 4rem 2rem; 
+            z-index: 10; position: relative; 
+            overflow-y: auto; 
+        }
 
-/* Titles */
-h1 {
-    color: white;
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-}
-.logo-section p {
-    font-size: clamp(1rem, 3vw, 1.5rem);
-    color: rgba(255,255,255,0.9);
-}
+        .login-sidebar::before { content: ''; flex: 1; min-height: 0; }
+        .login-sidebar::after { content: ''; flex: 1; min-height: 0; }
 
-/* Input */
-.relative { position: relative; }
+        .logo-area { margin-bottom: 2rem; text-align: center; flex-shrink: 0; }
+        .logo-area img { width: 90px; height: 90px; object-fit: contain; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(255,255,255,0.2)); }
+        .system-title { font-size: 1.8rem; color: white; font-weight: 800; margin: 0; line-height: 1.2; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .system-tagline { color: #cbd5e1; margin-top: 0.5rem; font-size: 0.9rem; font-weight: 500; letter-spacing: 0.5px; }
 
-#student-id-input {
-    width: 100%;
-    font-size: clamp(1rem, 2.5vw, 1.6rem);
-    padding-left: clamp(3rem, 6vw, 4rem);
-    padding-right: clamp(1rem, 3vw, 2rem);
-    padding-top: clamp(0.75rem, 2vw, 1.2rem);
-    padding-bottom: clamp(0.75rem, 2vw, 1.2rem);
-    border: clamp(3px, 0.6vw, 4px) solid white !important;
-    border-radius: clamp(0.75rem, 2vw, 1.5rem);
-    background: rgba(255, 255, 255, 0.95);
-    text-align: center;
-    color: #222;
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-    box-sizing: border-box;
-}
-#student-id-input::placeholder { color: #6b7280; opacity: 0.9; }
+        /* Input Wrapper */
+        .input-wrapper { width: 100%; margin-bottom: 1rem; position: relative; max-width: 350px; flex-shrink: 0; }
 
-.relative i.fas.fa-id-card {
-    left: clamp(0.75rem, 2vw, 1.5rem);
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: clamp(1.5rem, 4vw, 2.25rem);
-    color: #9ca3af;
-    position: absolute;
-    pointer-events: none;
-}
+        #student-id-input {
+            width: 100%; padding: 1rem 3.5rem; /* Added right padding for toggle button */
+            font-size: 1.4rem; font-weight: 600; text-align: center; letter-spacing: 2px;
+            background: rgba(0, 0, 0, 0.3); border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white; border-radius: 12px; outline: none; transition: all 0.2s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .input-icon-left { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.6); font-size: 1.2rem; pointer-events: none; transition: color 0.2s; }
+        
+        /* NEW STYLES FOR TOGGLE */
+        .keypad-toggle { 
+            position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); 
+            color: rgba(255,255,255,0.5); font-size: 1.2rem; cursor: pointer; transition: color 0.2s;
+            z-index: 5;
+        }
+        .keypad-toggle:hover { color: #fff; }
 
-/* Border color states */
-#student-id-input[data-state="idle"] { border-color: white !important; box-shadow: none !important; }
-#student-id-input[data-state="typing"] { border-color: #f87171 !important; box-shadow: 0 0 8px rgba(248,113,113,0.18) !important; }
-#student-id-input[data-state="valid"] { border-color: #22c55e !important; box-shadow: 0 0 10px rgba(34,197,94,0.28) !important; }
-#student-id-input[data-state="invalid"] { border-color: #f87171 !important; box-shadow: 0 0 8px rgba(248,113,113,0.18) !important; }
-#student-id-input[data-state="error"] { border-color: #facc15 !important; box-shadow: 0 0 10px rgba(250,204,21,0.25) !important; }
+        #student-id-input:focus { background: rgba(0, 0, 0, 0.5); border-color: #60a5fa; box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2); }
+        #student-id-input:focus ~ .input-icon-left { color: #60a5fa; }
 
-/* Status feedback */
-.status-feedback {
-    margin-top: 1rem;
-    font-weight: bold;
-    text-align: center;
-    font-size: clamp(1rem, 2vw, 1.25rem);
-    min-height: 1.2em;
-    color: white;
-}
+        /* --- NUMERIC KEYPAD --- */
+        #virtual-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 350px;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+        
+        #virtual-keypad.visible {
+            max-height: 800px;
+            opacity: 1;
+            margin-top: 1rem;
+            padding-bottom: 1rem;
+        }
 
-/* Spinner */
-.spinner {
-    display: inline-block;
-    width: 1.4em;
-    height: 1.4em;
-    border: 3px solid rgba(255, 255, 255, 0.2);
-    border-top-color: #22c55e;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    vertical-align: middle;
-    margin-right: 0.5em;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+        .key-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            padding: 1.2rem 0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.1s;
+            display: flex; align-items: center; justify-content: center;
+            user-select: none;
+        }
+        .key-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .key-btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.3); }
+        
+        .key-action { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; } 
+        .key-dash { background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4); } 
+        
+        .key-clear { background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.4); color: #fcd34d; font-size: 1rem; }
+        .key-enter { background: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.4); color: #86efac; grid-column: span 2; font-size: 1rem; }
 
-/* Modal Overlay */
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6); /* dark overlay behind */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 50;
-    display: none;
-}
+        .status-feedback { height: 20px; margin-bottom: 1.5rem; font-size: 0.9rem; font-weight: 600; text-align: center; flex-shrink: 0; }
+        
+        /* Modal */
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(255,255,255,0.15); border-radius: 1.5rem; padding: 2.5rem; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .alert-icon { font-size: 3.5rem; color: #f59e0b; margin-bottom: 1rem; }
+        .modal-text { font-size: 1.2rem; font-weight: 600; color: white; margin: 0; }
 
-/* Only the modal itself has glass effect */
-.modal-content {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 1.5rem;
-    padding: 2.5rem 2rem;
-    max-width: 420px;
-    text-align: center;
-    color: white;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    animation: fadeInScale 0.25s ease;
-}
+        @media (max-width: 768px) {
+            .main-container { justify-content: center; align-items: center; }
+            .login-sidebar { margin: 0; width: 90%; max-width: 420px; height: auto; max-height: 85vh; border-radius: 24px; padding: 1.5rem; }
+            .header-clock { position: static; transform: none; }
+            .clock-date, .user-info { display: none; }
+            .key-btn { padding: 1.2rem 0; font-size: 1.4rem; } 
+        }
+    </style>
+</head>
+<body>
 
-/* Alert icon */
-.modal-content .alert-icon {
-    font-size: 3rem;
-    color: #facc15;
-    margin-bottom: 1rem;
-    animation: pulse 1.5s infinite;
-}
-
-/* Animations */
-@keyframes fadeInScale {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-}
-
-</style>
-
-<div class="fullscreen-container" style="background-image: url('{% static 'images/bg1.jpg' %}');">
-    <div class="transparent-card">
-        <div class="logo-section">
+<header class="top-header">
+        <div class="header-brand">
             {% if system_settings.system_logo %}
-                <img src="{{ system_settings.system_logo.url }}" alt="{{ system_settings.system_name|default:'Library POS' }}">
+                <img src="{{ system_settings.system_logo.url }}" alt="SysLogo" class="header-logo-img">
             {% else %}
-                <img src="{% static 'images/default_logo.png' %}" alt="Library POS">
+                <i class="fas fa-layer-group" style="color: #f97316;"></i>
             {% endif %}
-            <h1>{{ system_settings.system_name|default:"Library POS" }}</h1>
-            {% if system_settings.system_tagline %}
-                <p>{{ system_settings.system_tagline }}</p>
-            {% endif %}
+
+            <div style="display: flex; flex-direction: column; justify-content: center; margin-left: 10px; line-height: 1.2;">
+                <span style="font-weight: 800; font-size: 1.1rem; text-transform: uppercase; color: white;">
+                    {{ system_settings.system_name|default:"POS SYSTEM" }}
+                </span>
+                <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 500; letter-spacing: 0.5px;">
+                    {{ system_settings.system_tagline|default:"Access. Learn and Grow." }}
+                </span>
+            </div>
+
         </div>
 
-        <div id="input-section" class="visible-input">
-            <form id="login-form" method="post" class="space-y-6" onsubmit="return false;">
+        <div class="header-clock">
+            <div class="clock-time" id="clock-time">00:00:00 PM</div>
+            <div class="clock-date" id="clock-date">LOADING...</div>
+        </div>
+
+        <div class="header-controls">
+            <div class="user-info">
+                <span class="user-role">OPERATOR</span>
+                <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
+            </div>
+            <button class="power-btn" onclick="window.location.href='/logout'" title="Logout / Shutdown">
+                <i class="fas fa-power-off"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="slideshow">
+            <div class="slide"></div>
+            <div class="slide"></div>
+            <div class="slide"></div>
+        </div>
+        
+        <div class="bg-overlay"></div>
+
+        <div class="login-sidebar">
+            <div class="logo-area">
+                {% if system_settings.system_logo %}
+                    <img src="{{ system_settings.system_logo.url }}" alt="Logo">
+                {% else %}
+                    <img src="{% static 'images/default_logo.png' %}" alt="Logo">
+                {% endif %}
+                <h2 class="system-title">{{ system_settings.system_name|default:"Library POS" }}</h2>
+                <p class="system-tagline">{{ system_settings.system_tagline|default:"Access. Learn and Grow." }}</p>
+            </div>
+
+            <form id="login-form" method="post" onsubmit="return false;" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
                 {% csrf_token %}
-                <div class="relative w-full">
-                    <i class="fas fa-id-card"></i>
-                    <input
-                        id="student-id-input"
-                        type="text"
-                        name="student_id"
-                        autofocus
-                        placeholder="Student ID (e.g. 23-11797)"
-                        autocomplete="off"
-                        data-state="idle"
-                        inputmode="numeric"
-                        aria-label="Student ID"
-                    >
+                <div class="input-wrapper">
+                    <input id="student-id-input" type="text" name="student_id" autofocus
+                        placeholder="ID (e.g. 23-11797)" autocomplete="off"
+                        data-state="idle" inputmode="numeric">
+                    
+                    <i class="fas fa-id-card input-icon-left"></i>
+                    <i class="fas fa-keyboard keypad-toggle" id="keypad-toggle" title="Toggle Keypad"></i>
                 </div>
             </form>
 
-            <div class="status-feedback" id="status-feedback"></div>
-            <div class="mt-6 text-center">
-                <p class="text-white opacity-80 text-sm sm:text-base md:text-lg">
-                    <i class="fas fa-info-circle mr-2"></i>Scan QR code or tap NFC card to login quickly
-                </p>
+            <div id="virtual-keypad">
+                <button class="key-btn" onclick="pressKey('1')">1</button>
+                <button class="key-btn" onclick="pressKey('2')">2</button>
+                <button class="key-btn" onclick="pressKey('3')">3</button>
+                
+                <button class="key-btn" onclick="pressKey('4')">4</button>
+                <button class="key-btn" onclick="pressKey('5')">5</button>
+                <button class="key-btn" onclick="pressKey('6')">6</button>
+                
+                <button class="key-btn" onclick="pressKey('7')">7</button>
+                <button class="key-btn" onclick="pressKey('8')">8</button>
+                <button class="key-btn" onclick="pressKey('9')">9</button>
+                
+                <button class="key-btn key-dash" onclick="pressKey('-')">-</button>
+                <button class="key-btn" onclick="pressKey('0')">0</button>
+                <button class="key-btn key-action" onclick="pressBackspace()"><i class="fas fa-backspace"></i></button>
+                
+                <button class="key-btn key-clear" onclick="pressClear()">CLR</button>
+                <button class="key-btn key-enter" onclick="pressEnter()">ENTER</button>
             </div>
+
+            <div class="status-feedback" id="status-feedback"></div>
+
         </div>
     </div>
-</div>
 
-<!-- Modal -->
-<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-content">
-        <i class="fas fa-exclamation-triangle alert-icon"></i>
-        <p id="modal-message"></p>
+
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <i class="fas fa-exclamation-triangle alert-icon"></i>
+            <p class="modal-text" id="modal-message"></p>
+        </div>
     </div>
-</div>
 
-</div>
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock-time').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second:'2-digit' });
+            document.getElementById('clock-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000); updateClock();
 
-<script>
-(function() {
-    const inputField = document.getElementById('student-id-input');
-    const statusFeedback = document.getElementById('status-feedback');
-    const modalOverlay = document.getElementById('modal-overlay');
-    const modalMessage = document.getElementById('modal-message');
+        const inputField = document.getElementById('student-id-input');
 
-    function maintainFocus() {
-        if (document.activeElement !== inputField) inputField.focus();
-    }
-    setInterval(maintainFocus, 500);
-
-    function showModal(message) {
-        modalMessage.textContent = message;
-        modalOverlay.style.display = 'flex';
-        setTimeout(() => {
-            modalOverlay.style.display = 'none';
-            inputField.value = '';
-            inputField.setAttribute('data-state', 'idle');
-            statusFeedback.textContent = '';
+        /* --- ADDED TOGGLE LOGIC HERE --- */
+        document.getElementById('keypad-toggle').addEventListener('click', function() {
+            const keypad = document.getElementById('virtual-keypad');
+            keypad.classList.toggle('visible');
             inputField.focus();
-        }, 3000);
-    }
+        });
 
-    function isStudentIDComplete(studentID) {
-        const pattern = /^\d{2}-\d{5}$/;
-        return pattern.test(studentID.trim());
-    }
-
-    function setState(state) {
-        inputField.setAttribute('data-state', state);
-        switch(state) {
-            case 'valid':
-                statusFeedback.innerHTML = `<span class="spinner"></span>Verifying...`;
-                statusFeedback.style.color = '#22c55e';
-                break;
-            case 'invalid':
-                statusFeedback.textContent = '❌ Invalid ID';
-                statusFeedback.style.color = '#f87171';
-                break;
-            case 'typing':
-                statusFeedback.textContent = '';
-                break;
-            case 'error':
-                statusFeedback.textContent = '⚠ Server error';
-                statusFeedback.style.color = '#facc15';
-                break;
-            default:
-                statusFeedback.textContent = '';
+        function pressKey(key) {
+            inputField.value += key;
+            inputField.dispatchEvent(new Event('input'));
+            inputField.focus();
         }
-    }
 
-    function validateStudentID(studentID) {
-        const cleanID = studentID.trim();
-        fetch(`/validate_student_id/?student_id=${encodeURIComponent(cleanID)}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.valid && data.approved) {
-                    setState('valid');
-                    setTimeout(() => {
-                        window.location.href = `/pos/options/?student_id=${encodeURIComponent(cleanID)}`;
-                    }, 800);
-                } else if (data.valid && !data.approved) {
-                    setState('invalid');
-                    showModal(data.reason || 'Student not approved.');
-                } else {
-                    setState('invalid');
-                    showModal(data.reason || 'Student not found.');
+        function pressBackspace() {
+            inputField.value = inputField.value.slice(0, -1);
+            inputField.dispatchEvent(new Event('input'));
+            inputField.focus();
+        }
+
+        function pressClear() {
+            inputField.value = "";
+            inputField.dispatchEvent(new Event('input'));
+            inputField.focus();
+        }
+
+        function pressEnter() {
+            const e = new KeyboardEvent('keypress', { key: 'Enter' });
+            inputField.dispatchEvent(e);
+        }
+
+        // Scanner Logic
+        let keyBuffer = [];
+        let bufferTimer = null;
+        const SCAN_MAX_DURATION_MS = 300;
+        const SCAN_MIN_LENGTH = 6;
+
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement === inputField) return;
+
+            if (e.key.length !== 1 && e.key !== 'Enter') return;
+            
+            const now = Date.now();
+            keyBuffer.push({ key: e.key, time: now });
+
+            if (bufferTimer) clearTimeout(bufferTimer);
+            bufferTimer = setTimeout(() => { keyBuffer = []; }, 500);
+
+            if (e.key === 'Enter') {
+                const chars = keyBuffer.filter(k => k.key !== 'Enter');
+                if (chars.length >= SCAN_MIN_LENGTH) {
+                    const duration = chars[chars.length-1].time - chars[0].time;
+                    if (duration <= SCAN_MAX_DURATION_MS) {
+                        e.preventDefault();
+                        const id = chars.map(c => c.key).join('');
+                        inputField.value = id;
+                        inputField.dispatchEvent(new Event('input'));
+                        validateStudentID(id);
+                    }
                 }
-            })
-            .catch(() => setState('error'));
-    }
+                keyBuffer = [];
+            }
+        });
 
-    let typingTimer = null;
-    inputField.addEventListener('input', () => {
-        const studentID = inputField.value.trim();
-        if (!studentID) {
-            setState('idle');
-            return;
+        function validateStudentID(studentID) {
+            const cleanID = studentID.trim();
+            const statusFeedback = document.getElementById('status-feedback');
+            
+            setState('valid');
+            
+            fetch(`/validate_student_id/?student_id=${encodeURIComponent(cleanID)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.valid && data.approved) {
+                        setTimeout(() => { window.location.href = `/pos/options/?student_id=${encodeURIComponent(cleanID)}`; }, 500);
+                    } else if (data.valid && !data.approved) {
+                        setState('invalid'); showModal(data.reason || 'Student account not active.');
+                    } else {
+                        setState('invalid'); showModal(data.reason || 'Student ID not found.');
+                    }
+                })
+                .catch(() => { setState('error'); setTimeout(() => setState('idle'), 2000); });
         }
-        if (!isStudentIDComplete(studentID)) {
-            setState('typing');
-            if (typingTimer) clearTimeout(typingTimer);
-        } else {
-            if (typingTimer) clearTimeout(typingTimer);
-            typingTimer = setTimeout(() => validateStudentID(studentID), 150);
+
+        function setState(state) {
+            const statusFeedback = document.getElementById('status-feedback');
+            inputField.setAttribute('data-state', state);
+            if(state==='valid') { statusFeedback.innerHTML = `<span class="spinner"></span>Verifying...`; statusFeedback.style.color = '#4ade80'; }
+            else if(state==='invalid') { statusFeedback.textContent = 'Invalid ID Format'; statusFeedback.style.color = '#f87171'; }
+            else if(state==='error') { statusFeedback.textContent = 'Server Connection Error'; statusFeedback.style.color = '#f59e0b'; }
+            else statusFeedback.textContent = '';
         }
-    });
 
-    inputField.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const id = inputField.value.trim();
-            if (isStudentIDComplete(id)) validateStudentID(id);
-            else showModal('Please enter your complete Student ID (e.g., 23-11797).');
+        function showModal(message) {
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalMessage = document.getElementById('modal-message');
+            modalMessage.textContent = message; modalOverlay.style.display = 'flex';
+            setTimeout(() => {
+                modalOverlay.style.display = 'none';
+                inputField.value = ''; inputField.setAttribute('data-state', 'idle');
+                document.getElementById('status-feedback').textContent = ''; 
+                inputField.focus(); 
+            }, 3000);
         }
-    });
 
-    window.addEventListener('click', maintainFocus);
-    window.addEventListener('focus', maintainFocus);
-    inputField.focus();
-})();
-</script>
+        (function() {
+            let typingTimer = null;
+            inputField.addEventListener('input', () => {
+                const studentID = inputField.value.trim();
+                if (!studentID) { setState('idle'); return; }
+                if (!/^\d{2}-\d{5}$/.test(studentID)) {
+                    setState('typing'); if (typingTimer) clearTimeout(typingTimer);
+                } else {
+                    if (typingTimer) clearTimeout(typingTimer);
+                    typingTimer = setTimeout(() => validateStudentID(studentID), 150);
+                }
+            });
+        
+            inputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const id = inputField.value.trim();
+                    if (/^\d{2}-\d{5}$/.test(id)) validateStudentID(id);
+                    else showModal('Please enter complete Student ID (e.g., 23-11797).');
+                }
+            });
+        
+            inputField.focus();
+        })();
 
-<!-- ✅ FIXED FULLSCREEN SCRIPT -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    function openFullscreen() {
-        const element = document.documentElement;
-
-        if (element.requestFullscreen) {
-            element.requestFullscreen();
-        } else if (element.webkitRequestFullscreen) {
-            element.webkitRequestFullscreen();
-        } else if (element.msRequestFullscreen) {
-            element.msRequestFullscreen();
-        }
-    }
-
-    // ✅ Give it a slight delay for safety
-    setTimeout(openFullscreen, 300);
-});
-</script>
-
-{% endblock %}
+        document.addEventListener("DOMContentLoaded", () => {
+            document.body.addEventListener('click', function(e) {
+                if (!document.fullscreenElement && e.target.tagName !== 'BUTTON' && !e.target.closest('.key-btn')) {
+                    const el = document.documentElement;
+                    if (el.requestFullscreen) el.requestFullscreen();
+                    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                }
+            }, { once: true });
+        });
+    </script>
+</body>
+</html>

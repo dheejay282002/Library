@@ -1,429 +1,442 @@
-{% extends 'library/base.html' %}
 {% load static %}
-
-{% block title %}POS Terminal{% endblock %}
-
-{% block content %}
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-
-<style>
-    /* 1. LAYOUT LOCK */
-    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #f1f5f9; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Select Action - {{ student.get_full_name }}</title>
     
-    #pos-container {
-        position: absolute; inset: 0; width: 100vw; height: 100vh;
-        display: flex; flex-direction: column;
-        z-index: 50;
-        font-family: 'Inter', sans-serif;
-    }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    /* 2. SCROLLBARS */
-    .scroller { overflow-y: auto; scrollbar-width: thin; }
-    .scroller::-webkit-scrollbar { width: 6px; }
-    .scroller::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+    <style>
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            margin: 0; 
+            padding: 0;
+            overflow: hidden; /* Prevent scroll on desktop */
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            height: 100vh;
+            width: 100vw;
+        }
 
-    /* 3. RETURN HIGHLIGHT */
-    .flash-highlight { animation: flash 0.5s ease-out; }
-    @keyframes flash {
-        0% { background-color: #ffedd5; transform: scale(1); }
-        50% { background-color: #fff7ed; transform: scale(1.02); }
-        100% { background-color: #fff; transform: scale(1); }
-    }
-</style>
+        /* Allow scrolling on mobile if content is too tall */
+        @media (max-width: 768px) {
+            body { overflow-y: auto; overflow-x: hidden; }
+        }
 
-<input type="hidden" id="currentMode" value="{{ mode }}">
+        /* --- 1. RESPONSIVE TOP HEADER --- */
+        .top-header {
+            height: 60px;
+            background-color: #0f172a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.5rem;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 50;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            width: 100%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
 
-<div id="pos-container">
+        /* Brand Section */
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        /* Container for Name + Terminal Info (Stacked) */
+        .brand-text-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 1.1;
+        }
 
-    <header class="h-16 bg-slate-900 text-white flex items-center justify-between px-6 shadow-md shrink-0 z-50">
-        <div class="flex items-center gap-4">
-            <div class="w-3 h-3 rounded-full animate-pulse shadow-[0_0_10px] {% if mode == 'borrow' %}bg-emerald-500 shadow-emerald-500{% else %}bg-orange-500 shadow-orange-500{% endif %}"></div>
-            <div>
-                <h1 class="font-black text-xl tracking-widest uppercase leading-none">SUNRISE<span class="text-blue-500">POS</span></h1>
-                <p class="text-[10px] text-slate-400 font-mono tracking-widest uppercase">
-                    Terminal 01 • <span class="{% if mode == 'borrow' %}text-emerald-400{% else %}text-orange-400{% endif %} font-bold">{{ mode|upper }} MODE</span>
-                </p>
-            </div>
+        .system-name {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: white;
+        }
+        
+        .terminal-info {
+            font-size: 0.6rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .brand-orange { color: #f97316; font-size: 1.2rem; } /* Icon size */
+        .brand-blue { color: #3b82f6; }
+
+        /* Clock Section */
+        .header-clock {
+            text-align: center;
+            line-height: 1.2;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .clock-time { font-size: 1.1rem; font-weight: 700; color: white; letter-spacing: 1px; }
+        .clock-date { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
+
+        /* Controls Section */
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+        
+        .user-info { text-align: right; }
+        .user-role { font-size: 0.65rem; color: #94a3b8; display: block; text-transform: uppercase; font-weight: 700; }
+        .user-name { font-size: 0.9rem; font-weight: 600; color: white; }
+
+        .power-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .power-btn:hover { background-color: #dc2626; }
+
+        /* --- HEADER MOBILE RESPONSIVENESS --- */
+        @media (max-width: 768px) {
+            .top-header { padding: 0 1rem; }
+            
+            /* Hide Date and User Role to save space */
+            .clock-date, .user-role, .user-name { display: none; }
+            
+            /* Make system name smaller */
+            .system-name { font-size: 0.9rem; }
+            .terminal-info { font-size: 0.5rem; }
+            
+            /* Move Clock out of absolute center so it doesn't overlap */
+            .header-clock {
+                position: static;
+                transform: none;
+            }
+            .clock-time { font-size: 0.9rem; }
+            
+            /* Keep Power Button visible */
+            .power-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+        }
+
+        /* --- 2. MAIN CONTAINER --- */
+        .main-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            padding-top: 60px;
+            
+            background-image: url('{% static 'images/bg1.jpg' %}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        /* --- RIGHT SIDEBAR (WHITE) --- */
+        .sidebar-panel {
+            /* Desktop Layout */
+            width: 450px;
+            min-width: 400px;
+            height: 100%;
+            margin-left: auto; /* Push to right */
+            
+            /* White Style */
+            background-color: #ffffff;
+            color: #1e293b;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+            
+            display: flex;
+            flex-direction: column;
+            padding: 3rem 2rem;
+            z-index: 10;
+            position: relative;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        /* Responsive Sidebar */
+        @media (max-width: 1024px) {
+            .main-container {
+                justify-content: center;
+                align-items: center;
+            }
+            .sidebar-panel {
+                margin: 0;
+                width: 90%;
+                max-width: 500px;
+                height: auto;
+                max-height: 85vh; /* Fit within screen */
+                border-radius: 16px;
+                box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar-panel {
+                width: 100%;
+                height: 100%;
+                max-height: none; /* Fill screen on mobile */
+                border-radius: 0;
+                padding-top: 2rem;
+            }
+        }
+
+        /* --- PROFILE SECTION --- */
+        .profile-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .avatar-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #1e293b;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            border: 4px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            object-fit: cover;
+        }
+        
+        .avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+        .student-name {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 0.25rem 0;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .student-id {
+            font-size: 1rem;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .course-badge {
+            background-color: #f8fafc;
+            color: #475569;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid #e2e8f0;
+            display: inline-block;
+        }
+
+        /* --- ACTION AREA --- */
+        .action-header {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.5rem;
+            margin-top: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        /* Mobile Button Stack */
+        @media (max-width: 400px) {
+            .action-grid { grid-template-columns: 1fr; }
+        }
+
+        .action-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem 1rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .action-card:hover {
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            background-color: #f8fafc;
+        }
+
+        .action-card i {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            color: #94a3b8;
+            transition: color 0.2s;
+        }
+
+        .card-label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+
+        .action-card:hover i.fa-book-open { color: #22c55e; }
+        .action-card:hover i.fa-undo { color: #3b82f6; }
+        .action-card:hover .card-label { color: #334155; }
+
+        .cancel-link {
+            margin-top: auto;
+            padding-top: 2rem;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 1.5rem;
+            display: inline-block;
+            transition: color 0.2s;
+        }
+        .cancel-link:hover { color: #ef4444; }
+
+    </style>
+</head>
+<body>
+
+        <header class="top-header">
+                <div class="header-brand">
+                    {% if system_settings.system_logo %}
+                        <img src="{{ system_settings.system_logo.url }}" alt="Logo" 
+                            style="height: 35px; width: auto; object-fit: contain; margin-right: 10px;">
+                    {% else %}
+                        <span class="brand-orange">●</span>
+                    {% endif %}
+                    
+                    <div class="brand-text-col">
+                        <span class="system-name">
+                            {{ system_settings.system_name|default:"Library System" }}<span class="brand-blue">POS</span>
+                        </span>
+                        <span class="terminal-info">{{ system_settings.system_tagline|default:"SUNRISE" }}</span>
+                    </div>
+                </div>
+                
+
+        <div class="header-clock">
+            <div class="clock-time" id="clock-time">00:00 PM</div>
+            <div class="clock-date" id="clock-date">LOADING...</div>
         </div>
 
-        <div class="text-center hidden md:block">
-            <p class="text-2xl font-mono font-bold leading-none" id="clock">00:00</p>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{% now "l, F jS" %}</p>
-        </div>
-
-        <div class="flex items-center gap-4">
-            <div class="text-right hidden sm:block">
-                <p class="text-[10px] text-slate-400 font-bold uppercase">Librarian</p>
-                <p class="font-bold leading-none">{{ user.get_full_name|default:user.username }}</p>
+        <div class="header-controls">
+            <div class="user-info">
+                <span class="user-role">LIBRARIAN</span>
+                <span class="user-name">{{ user.name|default:"pos" }}</span>
             </div>
-            <a href="{% url 'pos_home' %}" class="bg-red-600 hover:bg-red-700 text-white w-10 h-10 rounded flex items-center justify-center transition shadow-lg">
+            <button class="power-btn" onclick="window.location.href='/logout'" title="Logout">
                 <i class="fas fa-power-off"></i>
-            </a>
+            </button>
         </div>
     </header>
 
-    <div class="flex-1 flex overflow-hidden w-full">
-
-        <main class="flex-1 flex flex-col bg-slate-100 relative border-r border-slate-300 min-w-0">
+    <div class="main-container">
+        
+        <div class="sidebar-panel">
             
-            <div class="p-6 bg-white border-b border-slate-200 shadow-sm z-10 shrink-0">
-                <div class="max-w-4xl mx-auto w-full relative">
-                    <label class="block text-xs font-bold uppercase text-slate-400 mb-1 ml-1">
-                        {% if mode == 'borrow' %}
-                            <span class="text-emerald-600 font-bold"><i class="fas fa-plus-circle mr-1"></i> BORROW MODE:</span> Scan ISBN to Add Book
-                        {% else %}
-                            <span class="text-orange-600 font-bold"><i class="fas fa-search mr-1"></i> RETURN MODE:</span> Scan ISBN to Select for Return
-                        {% endif %}
-                    </label>
-                    <div class="flex gap-2">
-                        <div class="relative flex-1 group">
-                            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                <i class="fa-solid fa-barcode text-slate-300 text-2xl group-focus-within:text-blue-600 transition-colors"></i>
-                            </div>
-                            <input type="text" id="isbnInput" autocomplete="off" autofocus
-                                class="block w-full pl-14 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-xl font-bold text-slate-800 placeholder-slate-300 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner uppercase tracking-wider"
-                                placeholder="SCAN OR ENTER ISBN...">
-                            <div id="loading" class="absolute right-4 top-1/2 transform -translate-y-1/2 hidden">
-                                <i class="fas fa-circle-notch fa-spin text-blue-500 text-xl"></i>
-                            </div>
-                        </div>
-                        <button onclick="handleManualEnter()" class="bg-slate-800 hover:bg-slate-700 text-white px-8 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
-                            ENTER
-                        </button>
-                    </div>
-                    <p id="isbnFeedback" class="absolute -bottom-6 left-2 text-sm font-bold text-red-500"></p>
+            <div class="profile-section">
+                <div class="avatar-circle">
+                    {% if student.profile_photo %}
+                        <img src="{{ student.profile_photo.url }}" alt="Profile" class="avatar-img">
+                    {% else %}
+                        <span>{{ student.get_full_name|slice:":1"|upper }}</span>
+                    {% endif %}
                 </div>
-            </div>
 
-            <div class="grid grid-cols-12 gap-4 px-8 py-3 bg-slate-200 text-slate-500 text-xs font-bold uppercase border-b border-slate-300 shrink-0">
-                <div class="col-span-1">#</div>
-                <div class="col-span-8">Description</div>
-                <div class="col-span-3 text-right">{% if mode == 'borrow' %}Action{% else %}Selection{% endif %}</div>
-            </div>
+                <h1 class="student-name">{{ student.get_full_name }}</h1>
+                <div class="student-id">{{ student.student_id }}</div>
 
-            <div class="flex-1 scroller p-4 space-y-3 bg-slate-100 relative" id="listContainer">
-                
-                {% if mode == 'borrow' %}
-                    {% for book in books %}
-                    <div class="grid grid-cols-12 gap-4 items-center p-4 bg-white border-l-4 border-emerald-500 shadow-sm rounded-r-lg animate-fade-in" id="book-card-{{ book.id }}">
-                        <div class="col-span-1 font-mono text-slate-400 font-bold text-xl">{{ forloop.counter }}</div>
-                        <div class="col-span-8">
-                            <h3 class="font-bold text-slate-800 text-xl">{{ book.title }}</h3>
-                            <p class="text-sm text-slate-500 font-mono">{{ book.isbn }} <span class="mx-2">•</span> {{ book.author }}</p>
-                        </div>
-                        <div class="col-span-3 text-right">
-                            <button onclick="removeBook('{{ book.id }}')" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg transition font-bold border border-red-200 text-xs">
-                                <i class="fas fa-trash-alt mr-2"></i>REMOVE
-                            </button>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="h-full flex flex-col items-center justify-center text-slate-300 select-none">
-                        <i class="fas fa-book-medical text-8xl mb-6 opacity-20"></i>
-                        <h2 class="text-3xl font-black uppercase opacity-40">Borrow Mode</h2>
-                        <p class="font-bold opacity-60">Scan items to add to cart</p>
-                    </div>
-                    {% endfor %}
-
-                {% else %}
-                    <form id="returnForm" method="post">{% csrf_token %}</form>
-                    
-                    {% for item in borrowed_items %}
-                    <div id="return-row-{{ item.book.isbn }}" data-isbn="{{ item.book.isbn }}" 
-                         class="return-item-row grid grid-cols-12 gap-4 items-center p-4 bg-white border border-slate-200 shadow-sm rounded-lg hover:shadow-md transition-all cursor-pointer"
-                         onclick="toggleSelection('{{ item.book.isbn }}')">
-                        
-                        <div class="col-span-1 flex items-center justify-center">
-                            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-sm">
-                                {{ forloop.counter }}
-                            </div>
-                        </div>
-                        <div class="col-span-8">
-                            <h3 class="font-bold text-slate-800 text-xl">{{ item.book.title }}</h3>
-                            <div class="flex gap-3 text-sm mt-1">
-                                <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono text-xs">{{ item.book.isbn }}</span>
-                                <span class="text-orange-600 font-bold"><i class="far fa-clock mr-1"></i> Due: {{ item.transaction.due_date|date:"M d" }}</span>
-                            </div>
-                        </div>
-                        <div class="col-span-3 text-right flex justify-end items-center gap-3">
-                            <span class="text-xs font-bold uppercase text-slate-400 status-text">Not Selected</span>
-                            <input type="checkbox" id="cb-{{ item.book.isbn }}" name="return_ids" value="{{ item.id }}" form="actionForm" 
-                                   class="w-6 h-6 text-orange-600 rounded focus:ring-orange-500 cursor-pointer accent-orange-600"
-                                   onclick="event.stopPropagation(); updateRowStyle('{{ item.book.isbn }}');">
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="h-full flex flex-col items-center justify-center text-slate-300 select-none">
-                        <i class="fas fa-check-double text-8xl mb-6 opacity-20"></i>
-                        <h2 class="text-3xl font-black uppercase opacity-40">No Borrowed Books</h2>
-                        <p class="font-bold opacity-60">This student has no pending returns.</p>
-                    </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-
-            <div class="bg-white border-t border-slate-300 p-4 flex justify-between items-center z-20 shrink-0">
-                <div class="text-slate-500 text-sm font-medium">
-                    Session: <span class="font-bold uppercase {% if mode == 'borrow' %}text-emerald-600{% else %}text-orange-600{% endif %}">{{ mode }}ing</span>
-                </div>
-                <div class="text-right">
-                    <span class="text-xs font-bold uppercase text-slate-400 tracking-widest">Count</span>
-                    <span class="text-3xl font-black text-slate-800 leading-none ml-2">
-                        {% if mode == 'borrow' %}{{ books|length }}{% else %}{{ borrowed_items|length }}{% endif %}
-                    </span>
-                </div>
-            </div>
-        </main>
-
-        <aside class="w-[400px] min-w-[400px] bg-white border-l border-slate-300 flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.05)] z-30 shrink-0">
-            
-            <div class="p-6 border-b border-slate-200 bg-slate-50 text-center shrink-0">
-                {% if student.profile_photo %}
-                    <img src="{{ student.profile_photo.url }}" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md mx-auto">
-                {% else %}
-                    <div class="w-24 h-24 rounded-full bg-slate-800 text-white flex items-center justify-center text-3xl font-bold border-4 border-white shadow-md mx-auto">
-                        {{ student.get_full_name|slice:":1" }}
-                    </div>
-                {% endif %}
-                <h2 class="mt-4 text-xl font-bold text-slate-900 leading-tight">{{ student.get_full_name }}</h2>
-                <p class="text-slate-500 font-mono font-bold text-sm">{{ student.student_id }}</p>
-                <div class="mt-2 inline-block px-3 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold uppercase text-slate-600">
+                <div class="course-badge">
                     {{ student.course }}
                 </div>
             </div>
 
-            <div class="p-4 bg-slate-100 border-b border-slate-200 shrink-0">
-                <p class="text-[10px] font-bold uppercase text-slate-400 mb-2 tracking-widest text-center">Select Transaction Type</p>
-                <div class="grid grid-cols-2 gap-3">
-                    
-                    <a href="?mode=borrow" 
-                       class="py-4 px-2 text-center rounded-xl font-bold text-sm transition-all shadow-sm flex flex-col items-center gap-2 group border
-                       {% if mode == 'borrow' %}
-                           bg-emerald-600 text-white ring-4 ring-emerald-600/30 border-emerald-700 shadow-lg scale-105 z-10
-                       {% else %}
-                           bg-white text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border-slate-200
-                       {% endif %}">
-                        <i class="fas fa-book-reader text-2xl mb-1"></i>
-                        <span>BORROW</span>
-                    </a>
-                    
-                    <a href="?mode=return" 
-                       class="py-4 px-2 text-center rounded-xl font-bold text-sm transition-all shadow-sm flex flex-col items-center gap-2 group border
-                       {% if mode == 'return' %}
-                           bg-orange-500 text-white ring-4 ring-orange-500/30 border-orange-600 shadow-lg scale-105 z-10
-                       {% else %}
-                           bg-white text-slate-400 hover:bg-orange-50 hover:text-orange-600 border-slate-200
-                       {% endif %}">
-                        <i class="fas fa-undo text-2xl mb-1"></i>
-                        <span>RETURN</span>
-                    </a>
-                </div>
+            <div class="action-header">Select Transaction Type</div>
+
+            <div class="action-grid">
+                <a href="{% url 'pos_borrow_book' %}?student_id={{ student.student_id }}" class="action-card">
+                    <i class="fas fa-book-open"></i>
+                    <span class="card-label">Borrow</span>
+                </a>
+
+                <a href="{% url 'pos_return_book' %}?student_id={{ student.student_id }}" class="action-card">
+                    <i class="fas fa-undo"></i>
+                    <span class="card-label">Return</span>
+                </a>
             </div>
 
-            <div class="flex-1 p-4 bg-slate-50 flex flex-col gap-4 overflow-y-auto">
-                <div class="grid grid-cols-2 gap-3 shrink-0">
-                    <button onclick="location.reload()" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:bg-slate-50 font-bold text-slate-600 text-xs flex flex-col items-center gap-2">
-                        <i class="fas fa-sync-alt text-xl text-slate-400"></i> REFRESH
-                    </button>
-                    <a href="{% url 'pos_home' %}" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:bg-slate-50 font-bold text-slate-600 text-xs flex flex-col items-center gap-2">
-                        <i class="fas fa-user-friends text-xl text-blue-400"></i> NEW USER
-                    </a>
-                </div>
+            <a href="{% url 'pos_home' %}" class="cancel-link" title="Cancel">
+                <i class="fas fa-times-circle"></i>
+            </a>
 
-                <div class="flex-1"></div>
-
-                <form method="post" id="actionForm" class="h-40 shrink-0">
-                    {% csrf_token %}
-                    
-                    {% if mode == 'borrow' %}
-                        <input type="hidden" name="confirm_borrow" value="true">
-                        <button type="submit" class="w-full h-full bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-2xl shadow-xl shadow-emerald-200 border-b-[6px] border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex flex-col items-center justify-center group">
-                            <i class="fa-solid fa-check text-5xl mb-2 group-hover:scale-110 transition-transform"></i>
-                            <span class="text-3xl font-black tracking-tight">CONFIRM</span>
-                            <span class="text-xs font-bold text-emerald-100 uppercase mt-1">Complete Borrowing</span>
-                        </button>
-                    {% else %}
-                        <input type="hidden" name="confirm_return" value="true">
-                        <button type="submit" class="w-full h-full bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl shadow-xl shadow-orange-200 border-b-[6px] border-orange-700 active:border-b-0 active:translate-y-1 transition-all flex flex-col items-center justify-center group">
-                            <i class="fa-solid fa-box-open text-5xl mb-2 group-hover:scale-110 transition-transform"></i>
-                            <span class="text-3xl font-black tracking-tight">RETURN</span>
-                            <span class="text-xs font-bold text-orange-100 uppercase mt-1">Process Selected Items</span>
-                        </button>
-                    {% endif %}
-                </form>
-            </div>
-        </aside>
-
+        </div>
     </div>
-</div>
 
-<script>
-    // --- MODE CONFIGURATION ---
-    const MODE_INPUT = document.getElementById('currentMode');
-    const CURRENT_MODE = MODE_INPUT ? MODE_INPUT.value : 'borrow';
-
-    /* --- DOM ELEMENTS --- */
-    const isbnInput = document.getElementById('isbnInput');
-    const feedback = document.getElementById('isbnFeedback');
-    const loading = document.getElementById('loading');
-
-    /* --- CLOCK --- */
-    setInterval(() => {
-        document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    }, 1000);
-
-    /* --- INITIALIZATION --- */
-    document.addEventListener("DOMContentLoaded", function () {
-        if(isbnInput) {
-            isbnInput.focus();
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second:'2-digit' });
+            const dateString = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             
-            // Keep focus unless clicking interactive elements
-            document.addEventListener('click', (e) => {
-                const t = e.target;
-                if(!t.closest('button') && !t.closest('a') && t.type !== 'checkbox' && !t.closest('.return-item-row')) {
-                    isbnInput.focus();
+            document.getElementById('clock-time').textContent = timeString;
+            const dateEl = document.getElementById('clock-date');
+            if(dateEl) dateEl.textContent = dateString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.body.addEventListener('click', function() {
+                if (!document.fullscreenElement && window.innerWidth > 768) {
+                    const el = document.documentElement;
+                    if (el.requestFullscreen) el.requestFullscreen();
+                    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
                 }
-            });
-
-            // Enter Key Listener for Input
-            isbnInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleManualEnter();
-                }
-            });
-        }
-    });
-
-    /* --- MAIN HANDLER --- */
-    function handleManualEnter() {
-        const isbn = isbnInput.value.trim();
-        if(!isbn) return;
-
-        if (CURRENT_MODE === 'borrow') {
-            // BORROW MODE: Add new book to cart
-            addBookToServer(isbn);
-        } else {
-            // RETURN MODE: Find existing book in list
-            selectReturnItem(isbn);
-        }
-    }
-
-    /* --- BORROW LOGIC (Server Side) --- */
-    function addBookToServer(isbn) {
-        isbnInput.disabled = true;
-        if(loading) loading.classList.remove('hidden');
-        feedback.innerText = "";
-        
-        function getCSRFToken() {
-            const name = 'csrftoken';
-            const cookie = document.cookie.split('; ').find(row => row.startsWith(name + '='));
-            return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
-        }
-
-        fetch(window.location.href, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCSRFToken(),
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: `action=add_book&isbn=${encodeURIComponent(isbn)}`
-        })
-        .then(res => res.json())
-        .then(data => {
-            isbnInput.disabled = false;
-            if(loading) loading.classList.add('hidden');
-            isbnInput.value = ""; 
-            isbnInput.focus();
-            
-            if(data.success) {
-                window.location.reload(); 
-            } else {
-                feedback.innerText = data.error || "Item not found in database.";
-                // Flash Red
-                isbnInput.classList.add('ring-4', 'ring-red-500');
-                setTimeout(() => isbnInput.classList.remove('ring-4', 'ring-red-500'), 500);
-            }
-        })
-        .catch(err => {
-            isbnInput.disabled = false;
-            if(loading) loading.classList.add('hidden');
-            feedback.innerText = "Connection Error";
+            }, { once: true });
         });
-    }
-
-    window.removeBook = function(bookId) {
-        function getCSRFToken() { return document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1]; }
-        
-        fetch(window.location.href, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCSRFToken(), 'X-Requested-With': 'XMLHttpRequest'},
-            body: `action=remove&book_id=${bookId}`
-        }).then(res=>res.json()).then(d=>{if(d.success) window.location.reload()});
-    }
-
-    /* --- RETURN LOGIC (Client Side) --- */
-    function selectReturnItem(isbn) {
-        isbnInput.value = "";
-        isbnInput.focus();
-        feedback.innerText = "";
-
-        // Find row by data-isbn
-        const row = document.querySelector(`.return-item-row[data-isbn="${isbn}"]`);
-        
-        if (row) {
-            const rowIsbn = row.getAttribute('data-isbn');
-            const checkbox = document.getElementById(`cb-${rowIsbn}`);
-            
-            if (!checkbox.checked) {
-                checkbox.checked = true;
-                updateRowStyle(rowIsbn);
-                
-                // Scroll & Flash
-                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                row.classList.add('flash-highlight');
-                setTimeout(() => row.classList.remove('flash-highlight'), 1000);
-            } else {
-                feedback.innerText = "Item already selected.";
-                feedback.className = "absolute -bottom-6 left-2 text-sm font-bold text-orange-500";
-            }
-        } else {
-            feedback.innerText = "Book not found in borrowed list.";
-            feedback.className = "absolute -bottom-6 left-2 text-sm font-bold text-red-500";
-            // Flash Red
-            isbnInput.classList.add('ring-4', 'ring-red-500');
-            setTimeout(() => isbnInput.classList.remove('ring-4', 'ring-red-500'), 500);
-        }
-    }
-
-    // Toggle selection visually
-    window.toggleSelection = function(isbn) {
-        const checkbox = document.getElementById(`cb-${isbn}`);
-        checkbox.checked = !checkbox.checked;
-        updateRowStyle(isbn);
-    }
-
-    window.updateRowStyle = function(isbn) {
-        const checkbox = document.getElementById(`cb-${isbn}`);
-        const row = document.getElementById(`return-row-${isbn}`);
-        const statusText = row.querySelector('.status-text');
-
-        if (checkbox.checked) {
-            row.classList.add('border-orange-500', 'bg-orange-50');
-            row.classList.remove('border-slate-200', 'bg-white');
-            statusText.innerText = "To Return";
-            statusText.classList.add('text-orange-600');
-            statusText.classList.remove('text-slate-400');
-        } else {
-            row.classList.remove('border-orange-500', 'bg-orange-50');
-            row.classList.add('border-slate-200', 'bg-white');
-            statusText.innerText = "Not Selected";
-            statusText.classList.remove('text-orange-600');
-            statusText.classList.add('text-slate-400');
-        }
-    }
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>

@@ -85,21 +85,24 @@ TEMPLATES = [
 WSGI_APPLICATION = 'library_system.wsgi.application'
 
 # ---------------------------
-# DATABASE
+# DATABASE (XAMPP/MySQL)
 # ---------------------------
 DATABASES = {
-    'default': {  # MariaDB
+    'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'library',
-        'USER': 'root',
-        'PASSWORD': '0123456789',
-        'HOST': 'localhost',
-        'PORT': '7970',
+        'NAME': os.environ.get('MYSQL_DATABASE', 'library'),
+        'USER': os.environ.get('MYSQL_USER', 'root'),
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
+        'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('MYSQL_PORT', '3306'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     },
-    'sqlite': {  # Optional SQLite backup
+    'sqlite': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'NAME': os.environ.get('SQLITE_DB_PATH', BASE_DIR / 'db.sqlite3'),
+    },
 }
 
 # ---------------------------

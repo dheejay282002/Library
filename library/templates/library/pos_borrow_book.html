@@ -1,375 +1,549 @@
-<!--recover here-->
-{% extends 'library/base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Borrow Books - {{ student.get_full_name }}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-{% block title %}Borrow Book - POS{% endblock %}
+    <style>
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; background-color: #f1f5f9; height: 100vh; width: 100vw; display: flex; flex-direction: column; }
 
-{% block content %}
-<div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8">
-    <div class="flex items-center justify-between border-b-2 border-gray-200 pb-4 mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">
-            <i class="fas fa-book-reader mr-3 text-green-600"></i>Borrow Books
-        </h1>
-        <a href="{% url 'pos_home' %}" class="text-gray-500 hover:text-gray-700 transition">
-            <i class="fas fa-times-circle text-3xl"></i>
-        </a>
-    </div>
+        /* --- HEADER --- */
+        .top-header { height: 60px; background-color: #0f172a; display: flex; justify-content: space-between; align-items: center; padding: 0 1.5rem; color: white; flex-shrink: 0; z-index: 50; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .brand-text-col { display: flex; flex-direction: column; line-height: 1.1; }
+        .system-name { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; color: white; }
+        .terminal-info { font-size: 0.6rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .brand-orange { color: #f97316; font-size: 1.2rem; }
+        .brand-blue { color: #3b82f6; }
+        .header-clock { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
+        .clock-time { font-size: 1.1rem; font-weight: 700; color: white; letter-spacing: 1px; }
+        .clock-date { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+        .user-info { text-align: right; }
+        .user-role { font-size: 0.65rem; color: #94a3b8; display: block; text-transform: uppercase; font-weight: 700; }
+        .user-name { font-size: 0.9rem; font-weight: 600; color: white; }
+        .power-btn { background-color: #ef4444; color: white; border: none; width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
+        .power-btn:hover { background-color: #dc2626; }
 
-    {% if step == "add_books" or step == "confirm" %}
+        /* --- LAYOUT --- */
+        .main-container { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; }
+        .transaction-panel { flex: 1; display: flex; flex-direction: column; background-color: #f8fafc; padding: 1.5rem; position: relative; }
 
-    {% endif %}
+        /* Search */
+        .search-area { background: white; padding: 0.75rem 1rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 0.5rem; display: flex; gap: 0.75rem; align-items: center; height: 70px; flex-shrink: 0; }
+        .mode-badge { font-size: 0.75rem; font-weight: 700; color: #f97316; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+        .search-wrapper { flex: 1; position: relative; height: 100%; display: flex; align-items: center; }
+        #isbnInput { width: 100%; height: 48px; padding: 0 1rem; font-size: 1.1rem; border: 2px solid #cbd5e1; border-radius: 8px; outline: none; color: #334155; font-weight: 600; text-transform: uppercase; transition: border-color 0.2s; }
+        #isbnInput:focus { border-color: #3b82f6; }
+        #isbnInput::placeholder { color: #94a3b8; font-weight: 500; text-transform: none; }
+        #isbnInput.valid { border-color: #22c55e; }
+        #isbnInput.invalid { border-color: #ef4444; }
+        .add-btn { background-color: #1e293b; color: white; border: none; height: 48px; padding: 0 1.5rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .add-btn:hover { background-color: #334155; }
+        .add-btn:active { transform: scale(0.98); }
 
-    {% if step == "add_books" %}
-    <!-- Add Books Step -->
-    <div class="mb-8">
-        <h3 class="font-bold text-xl mb-4 text-gray-800">
-            <i class="fas fa-list mr-2 text-green-600"></i>Books to Borrow (<span id="totalBooks">{{ books|length }}</span>)
-        </h3>
-        <div class="space-y-3" id="booksList">
-            {% for book in books %}
-            <div class="relative border-l-4 border-green-600 bg-green-50 pl-6 pr-10 py-4 rounded-r-lg shadow-sm" id="book-card-{{ book.id }}">
-                <p class="font-bold text-lg text-gray-800">{{ book.title }}</p>
-                <p class="text-gray-600"><strong>ISBN:</strong> {{ book.isbn }}</p>
-                <p class="text-gray-600"><strong>Shelf:</strong> {{ book.shelf|default:"(no shelf assigned)" }}</p>
+        /* Feedback */
+        .feedback-container { min-height: 24px; margin-bottom: 1rem; text-align: center; flex-shrink: 0; }
+        .feedback-text { font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .feedback-success { color: #16a34a; }
+        .feedback-error { color: #dc2626; }
+        .feedback-neutral { color: #64748b; }
 
-                <p class="text-gray-600"><strong>Author:</strong> {{ book.author }}</p>
-                <button type="button"
-                    class="absolute top-2 right-2 text-red-600 font-bold hover:text-red-800"
-                    onclick="removeBook('{{ book.id }}')">&times;</button>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
+        /* Table */
+        .table-container { flex: 1; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; min-height: 200px; }
+        .table-header { display: grid; grid-template-columns: 2fr 3fr 2fr 1.5fr 1fr; background-color: #e2e8f0; padding: 1rem; border-bottom: 2px solid #cbd5e1; font-weight: 700; color: #475569; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+        .table-body { flex: 1; overflow-y: auto; }
+        .table-row { display: grid; grid-template-columns: 2fr 3fr 2fr 1.5fr 1fr; padding: 1rem; border-bottom: 1px solid #f1f5f9; align-items: center; font-size: 0.95rem; color: #1e293b; transition: background 0.1s; }
+        .table-row:nth-child(even) { background-color: #f8fafc; }
+        .table-row:hover { background-color: #f1f5f9; }
+        .table-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 10px; }
+        .cell-isbn { font-family: monospace; font-weight: 600; color: #475569; }
+        .cell-title { font-weight: 700; }
+        .remove-btn { background-color: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; cursor: pointer; }
+        .remove-btn:hover { background-color: #dc2626; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8; }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
 
-    <!-- Manual ISBN Input -->
-    <form method="post" class="space-y-6" id="borrowForm">
-        {% csrf_token %}
-        <div id="hiddenIsbnContainer"></div>
-
-        <div class="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
-            <label class="block text-lg font-semibold text-gray-700 mb-3">
-                <i class="fas fa-barcode mr-2"></i>Enter or Scan Book ISBN
-            </label>
-            <input type="text" id="isbnInput" name="isbn"
-                class="w-full px-6 py-4 border-2 border-gray-300 rounded-lg text-center text-2xl focus:outline-none focus:ring-2 transition"
-                placeholder="Enter ISBN manually or scan barcode" autofocus>
-            <p id="isbnFeedback" class="text-center mt-2 font-semibold"></p>
-        </div>
-
-        <div class="flex gap-4">
-            <button type="submit" name="add_book"
-                class="flex-1 bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition font-bold text-lg shadow-lg transform hover:scale-105">
-                <i class="fas fa-plus mr-2"></i>Add Book
-            </button>
-            <button type="submit" name="continue_borrow" id="continueBtn"
-                class="flex-1 bg-green-600 text-white py-4 rounded-lg hover:bg-green-700 transition font-bold text-lg shadow-lg transform hover:scale-105">
-                <i class="fas fa-arrow-right mr-2"></i>Continue
-            </button>
-        </div>
-    </form>
-
-    <!-- Hidden scanner input -->
-    <input type="text" id="scannerInput" style="position:absolute; left:-10000px;" autocomplete="off">
-
-    <!-- Modal for errors -->
-    <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-6 max-w-sm text-center shadow-2xl">
-            <h3 class="text-lg font-bold mb-4 text-red-600" id="modalTitle">Error</h3>
-            <p class="text-gray-700 mb-6" id="modalMessage"></p>
-            <button onclick="closeModal()"
-                class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold">Close</button>
-        </div>
-    </div>
-
-
-{% endif %}
-
-{% if step == "confirm" %}
-<!-- Confirm Step -->
-<div class="mb-8">
-    <h3 class="font-bold text-2xl mb-6 text-gray-800 text-center">
-        <i class="fas fa-check-circle mr-2 text-green-600"></i>Review Books to Borrow
-    </h3>
-    <div class="bg-gray-50 rounded-lg p-6 border-2 border-gray-200">
-        <table class="w-full">
-            <thead class="bg-gray-200 border-b-2 border-gray-300">
-                <tr>
-                    <th class="px-4 py-3 text-left font-bold text-gray-700">#</th>
-                    <th class="px-4 py-3 text-left font-bold text-gray-700">Book Title</th>
-                    <th class="px-4 py-3 text-left font-bold text-gray-700">ISBN</th>
-                    <th class="px-4 py-3 text-left font-bold text-gray-700">Author</th>
-                </tr>
-            </thead>
-            <tbody id="confirmBooksList">
-                {% for book in books %}
-                <tr>
-                    <td class="px-4 py-3 font-semibold text-gray-600">{{ forloop.counter }}</td>
-                    <td class="px-4 py-3 font-bold text-gray-800">{{ book.title }}</td>
-                    <td class="px-4 py-3 text-gray-600 font-mono">{{ book.isbn }}</td>
-
-                    <td class="px-4 py-3 text-gray-600">{{ book.author }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div class="mt-4 text-right font-bold text-gray-700">
-            Total Books: <span class="text-green-600">{{ books|length }}</span>
-        </div>
-
-        <form method="post" class="mt-4 space-y-4">
-            {% csrf_token %}
-            <button type="submit" name="confirm_borrow"
-                class="w-full bg-green-600 text-white py-5 rounded-lg hover:bg-green-700 transition font-bold text-xl shadow-2xl transform hover:scale-105">
-                <i class="fas fa-check-circle mr-2"></i>Borrow These Books
-            </button>
-            <a href="{% url 'pos_home' %}"
-                class="block w-full bg-gray-600 text-white py-5 rounded-lg hover:bg-gray-700 transition font-bold text-xl text-center shadow-lg">
-                <i class="fas fa-times mr-2"></i>Cancel
-            </a>
-        </form>
-    </div>
-</div>
-{% endif %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    /* ---------- Elements ---------- */
-    const isbnInput = document.getElementById('isbnInput');
-    const isbnFeedback = document.getElementById('isbnFeedback');
-    const borrowForm = document.getElementById('borrowForm');
-    const booksListContainer = document.getElementById('booksList');
-    const modal = document.getElementById('errorModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalMessage = document.getElementById('modalMessage');
-
-    const csrfToken = getCSRFToken();
-
-    function getCSRFToken() {
-        const name = 'csrftoken';
-        const cookie = document.cookie.split('; ').find(row => row.startsWith(name + '='));
-        return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
-    }
-
-    function normalizeISBN(isbn) {
-        return isbn.replace(/[^0-9Xx]/g,'').toUpperCase();
-    }
-
-function showModal(title, message) {
-    modalTitle.textContent = title;
-    modalMessage.textContent = message;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    // ✅ Automatically hide after 2 seconds
-    setTimeout(() => {
-        closeModal();
-    }, 2000);
-}
-
-function closeModal() {
-    modal.classList.remove('flex');
-    modal.classList.add('hidden');
-}
-
-    /* ---------- Update Book List UI ---------- */
-function renderBookList(books){
-    booksListContainer.innerHTML = '';
-    books.forEach(book => {
-        const div = document.createElement('div');
-        div.id = `book-card-${book.id}`;
-        div.className = "relative border-l-4 border-green-600 bg-green-50 pl-6 pr-10 py-4 rounded-r-lg shadow-sm";
-        div.innerHTML = `
-            <p class="font-bold text-lg text-gray-800">${book.title}</p>
-            <p class="text-gray-600"><strong>ISBN:</strong> ${book.isbn}</p>            <p class="text-gray-600"><strong>Author:</strong> ${book.author}</p>
-            <button type="button" class="absolute top-2 right-2 text-red-600 font-bold hover:text-red-800"
-                onclick="removeBook('${book.id}')">&times;</button>`;
-        booksListContainer.appendChild(div);
-    });
-    updateTotal();
-}
-
-    function updateTotal(){
-        const totalBooksElement = document.getElementById('totalBooks');
-        const bookCards = document.querySelectorAll('[id^="book-card-"]');
-        if(totalBooksElement) totalBooksElement.textContent = bookCards.length;
-    }
-
-    /* ---------- AJAX Add Book ---------- */
-    function addBookServer(isbn){
-        if(!isbn) return;
-        if(addBookServer._running) return;
-        addBookServer._running = true;
-
-        fetch("{% url 'pos_borrow_book' %}",{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/x-www-form-urlencoded",
-                "X-CSRFToken": csrfToken,
-                "X-Requested-With":"XMLHttpRequest"
-            },
-            body: new URLSearchParams({ 'isbn': isbn })
-        })
-        .then(res=>{
-            addBookServer._running = false;
-            if (!res.ok) return res.json().then(j=>{throw j;});
-            return res.json();
-        })
-        .then(data=>{
-            if(data.error) return showModal('Error', data.error);
-            renderBookList(data.books || []);
-            isbnFeedback.textContent = `Added: ${data.books && data.books.length ? (data.books.slice(-1)[0].title) : isbn}`;
-            isbnFeedback.className = 'text-center mt-2 font-semibold text-green-600';
-        })
-        .catch(err=>{
-            addBookServer._running = false;
-            const message = err && err.error ? err.error : 'Failed to add book';
-            showModal('Error', message);
-        });
-    }
-    addBookServer._running = false;
-
-    /* ---------- AJAX Validate ISBN ---------- */
-    function validateIsbnServer(isbn){
-        return fetch("{% url 'validate_book_isbn' %}?isbn="+encodeURIComponent(isbn))
-            .then(res=>{
-                if(!res.ok) return res.json().then(j=>Promise.reject(j));
-                return res.json();
-            });
-    }
-
-    /* ---------- Remove Book ---------- */
-    window.removeBook = function(bookId){
-        fetch(window.location.href, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `action=remove&book_id=${bookId}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-            const card = document.getElementById(`book-card-${bookId}`);
-            if (card) card.remove();
-            updateTotal();
-        })
-        .catch(err => {
-            console.error(err);
-            showModal('Error', 'Error removing book: ' + err.message);
-        });
-    }
-
-    /* ---------- Live Validation ---------- */
-    let validateTimer = null;
-    isbnInput.addEventListener('input', ()=>{
-        clearTimeout(validateTimer);
-        const raw = isbnInput.value.trim();
-        if(!raw){
-            isbnInput.classList.remove('border-green-600','border-red-600');
-            isbnFeedback.textContent = '';
-            return;
+        /* --- FOOTER (DESKTOP) --- */
+        .panel-footer { 
+            margin-top: 1rem; 
+            display: flex; justify-content: flex-end; 
+            align-items: center; 
+            font-weight: 700; color: #64748b; font-size: 0.9rem; 
+            min-height: 50px; flex-shrink: 0; 
         }
-        validateTimer = setTimeout(()=>{
-            const isbn = normalizeISBN(raw);
-            validateIsbnServer(isbn)
-            .then(data=>{
-                if(data.valid && !data.unavailable){
-                    isbnInput.classList.remove('border-red-600');
-                    isbnInput.classList.add('border-green-600');
-                    isbnFeedback.textContent = data.book.title;
-                    isbnFeedback.className = 'text-center mt-2 font-semibold text-green-600';
-                } else if(data.valid && data.unavailable){
-                    isbnInput.classList.remove('border-green-600');
-                    isbnInput.classList.add('border-red-600');
-                    isbnFeedback.textContent = `${data.book.title} (Unavailable)`;
-                    isbnFeedback.className = 'text-center mt-2 font-semibold text-red-600';
-                } else {
-                    isbnInput.classList.remove('border-green-600');
-                    isbnInput.classList.add('border-red-600');
-                    isbnFeedback.textContent = 'Book not found';
-                    isbnFeedback.className = 'text-center mt-2 font-semibold text-red-600';
-                }
-            })
-            .catch(err=>{
-                isbnInput.classList.remove('border-green-600');
-                isbnInput.classList.add('border-red-600');
-                isbnFeedback.textContent = (err && err.reason) ? err.reason : 'Error checking ISBN';
-                isbnFeedback.className = 'text-center mt-2 font-semibold text-red-600';
-            });
-        },300);
-    });
+        .count-badge { font-size: 1.5rem; color: #1e293b; margin-left: 0.5rem; }
+        .mobile-borrow-btn { display: none; } /* Hidden on Desktop */
 
-    isbnInput.addEventListener('keypress',(e)=>{
-        if(e.key==='Enter'){
-            e.preventDefault();
-            const isbn = normalizeISBN(isbnInput.value.trim());
-            if(!isbn){ showModal('Error','Please enter or scan an ISBN'); return; }
-            addBookServer(isbn);
-            isbnInput.value=''; isbnFeedback.textContent='';
+        /* --- SIDEBAR --- */
+        .sidebar { 
+            width: 380px; background: white; border-left: 1px solid #e2e8f0; 
+            display: flex; flex-direction: column; 
+            box-shadow: -4px 0 15px rgba(0,0,0,0.05); z-index: 20; 
+            height: 100%; 
         }
-    });
 
-    /* ---------- Scanner Detection ---------- */
-    let keyBuffer = [];
-    let bufferTimer = null;
-    const SCAN_MAX_DURATION_MS = 300;
-    const SCAN_MIN_LENGTH = 6;
+        .sidebar-scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex; flex-direction: column;
+        }
 
-    document.addEventListener('keydown', (e)=>{
-        if(e.key.length!==1 && e.key!=='Enter') return;
-        const now = Date.now();
-        keyBuffer.push({key:e.key,time:now});
-        if(bufferTimer) clearTimeout(bufferTimer);
-        bufferTimer = setTimeout(()=>{keyBuffer=[]; bufferTimer=null;},1000);
+        .sidebar-fixed-bottom {
+            flex-shrink: 0;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #f1f5f9;
+            background: white;
+        }
 
-        if(e.key==='Enter'){
-            const chars = keyBuffer.filter(k=>k.key!=='Enter');
-            const len = chars.length;
-            const duration = len ? (chars[len-1].time - chars[0].time) : 0;
-            keyBuffer=[]; if(bufferTimer){clearTimeout(bufferTimer); bufferTimer=null;}
+        .profile-section { text-align: center; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+        .avatar { width: 90px; height: 90px; border-radius: 50%; background-color: #1e293b; color: white; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 700; margin: 0 auto 1rem; border: 4px solid #f1f5f9; }
+        .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .student-name { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase; line-height: 1.2; }
+        .student-id { font-size: 0.9rem; color: #64748b; font-weight: 600; margin-top: 4px; }
+        .course-pill { display: inline-block; margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
 
-            if(len>=SCAN_MIN_LENGTH && duration<=SCAN_MAX_DURATION_MS){
-                const raw = chars.map(c=>c.key).join('');
-                const isbn = normalizeISBN(raw);
-                if(!isbn) return;
-                isbnInput.classList.remove('border-red-600'); isbnInput.classList.add('border-green-600');
-                isbnFeedback.textContent='Scanning...'; isbnFeedback.className='text-center mt-2 font-semibold text-gray-600';
-                validateIsbnServer(isbn)
-                .then(data=>{
-                    if(data.valid && !data.unavailable) addBookServer(isbn);
-                    else if(data.valid && data.unavailable){
-                        isbnInput.classList.remove('border-green-600'); isbnInput.classList.add('border-red-600');
-                        isbnFeedback.textContent=`${data.book.title} (Unavailable)`; isbnFeedback.className='text-center mt-2 font-semibold text-red-600';
-                        showModal('Unavailable', `${data.book.title} is currently unavailable`);
-                    } else {
-                        isbnInput.classList.remove('border-green-600'); isbnInput.classList.add('border-red-600');
-                        isbnFeedback.textContent='Book not found'; isbnFeedback.className='text-center mt-2 font-semibold text-red-600';
-                        showModal('Not Found','Book not found in system');
-                    }
-                    isbnInput.value='';
-                })
-                .catch(()=>{isbnInput.classList.remove('border-green-600'); isbnInput.classList.add('border-red-600'); isbnFeedback.textContent='Server error'; isbnFeedback.className='text-center mt-2 font-semibold text-red-600';});
-            } else {
-                const raw = chars.map(c=>c.key).join('');
-                if(document.activeElement!==isbnInput && raw.trim().length>0){
-                    isbnInput.value = raw;
-                    const isbn = normalizeISBN(raw);
-                    if(isbn) setTimeout(()=>{addBookServer(isbn); isbnInput.value=''; isbnFeedback.textContent='';},50);
-                }
+        /* --- TRANSACTION SELECTOR TOGGLE --- */
+        .section-toggle-header {
+            font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;
+            margin: 0 0 0.5rem 0; text-align: center; cursor: pointer; user-select: none;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 0.8rem; border-radius: 6px; transition: background 0.2s;
+            background: #f1f5f9;
+        }
+        .section-toggle-header:hover { background: #e2e8f0; color: #3b82f6; }
+        .section-toggle-header i { transition: transform 0.3s ease; }
+        .section-toggle-header.collapsed i { transform: rotate(-90deg); }
+
+        /* Nav Grid */
+        .nav-content { 
+            overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            max-height: 500px; /* Big enough for desktop */
+            opacity: 1; margin-bottom: 2rem;
+        }
+        .nav-content.collapsed { max-height: 0; opacity: 0; margin-bottom: 0; }
+
+        .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 0.5rem; }
+        .nav-btn { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem 1rem; text-align: center; text-decoration: none; color: #64748b; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .nav-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #f8fafc; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .nav-btn.active { background: #eff6ff; border-color: #3b82f6; color: #3b82f6; }
+        .nav-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+
+        /* Keypad Styles */
+        .keypad-toggle-header {
+            font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;
+            margin: 1rem 0 0.5rem 0; text-align: center; cursor: pointer; user-select: none;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 0.5rem; border-radius: 6px; transition: background 0.2s;
+            background: #f1f5f9;
+        }
+        .keypad-toggle-header:hover { background: #e2e8f0; color: #3b82f6; }
+        .keypad-toggle-header i { transition: transform 0.3s ease; }
+        .keypad-toggle-header.collapsed i { transform: rotate(-90deg); }
+
+        #sideKeypad {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+            overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 600px; opacity: 1; margin-bottom: 1rem; flex-shrink: 0;
+        }
+        #sideKeypad.collapsed { max-height: 0; opacity: 0; margin-bottom: 0; }
+
+        .key-btn {
+            background: white; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 1.1rem 0; font-size: 1.2rem; font-weight: 600; color: #334155;
+            cursor: pointer; transition: all 0.1s; display: flex; align-items: center; justify-content: center;
+        }
+        .key-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .key-btn:active { transform: scale(0.95); background: #e2e8f0; }
+        .key-action { background: #fee2e2; border-color: #fecaca; color: #ef4444; }
+        .key-enter { background: #dcfce7; border-color: #bbf7d0; color: #16a34a; grid-column: span 3; font-size: 1rem; text-transform: uppercase; }
+
+        .big-action-btn { width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 1.5rem; border-radius: 16px; font-size: 1.8rem; font-weight: 800; text-transform: uppercase; cursor: pointer; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3); transition: transform 0.2s; display: block; }
+        .big-action-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4); }
+
+        #errorModal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .modal-card { background: white; padding: 2rem; border-radius: 12px; max-width: 400px; text-align: center; }
+
+        /* --- RESPONSIVE CSS --- */
+        @media (max-width: 1024px) { 
+            .sidebar { width: 340px; } 
+            .sidebar-scroll-content { padding: 1.5rem; }
+            .key-btn { padding: 0.9rem 0; font-size: 1.1rem; }
+            .big-action-btn { font-size: 1.5rem; padding: 1.2rem; }
+        }
+        
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; overflow-y: auto; height: auto; min-height: 100vh; }
+            
+            /* Sidebar on Top, content scrollable */
+            .sidebar { 
+                width: 100%; order: -1; padding: 0; border-left: none; border-bottom: 1px solid #e2e8f0; 
+                height: auto; overflow: visible; 
+            }
+            .sidebar-scroll-content { padding: 1rem; }
+            .sidebar-fixed-bottom { display: none; } /* Hide big button from sidebar on mobile */
+            
+            /* Hide Keypad elements completely on mobile */
+            #keypadToggle, #sideKeypad { display: none !important; }
+            
+            .transaction-panel { overflow: visible; height: auto; padding-bottom: 90px; order: 2; }
+            .table-container { min-height: 300px; height: auto; }
+            
+            /* --- FIXED MOBILE FOOTER --- */
+            .panel-footer { 
+                /* Separated Layout */
+                display: flex; justify-content: space-between; align-items: center;
+                position: fixed; bottom: 0; left: 0; right: 0; 
+                background: white; margin: 0; padding: 0.8rem 1.5rem; 
+                box-shadow: 0 -4px 15px rgba(0,0,0,0.1); z-index: 60; 
+            }
+            
+            /* Left: Count */
+            .count-container { 
+                order: 1; flex-shrink: 0; margin-right: 1rem;
+            }
+            
+            /* Right: Borrow Button */
+            .mobile-borrow-btn { 
+                display: block; order: 2; width: auto; 
+                background: linear-gradient(135deg, #10b981, #059669); color: white; 
+                border: none; padding: 0.8rem 2.5rem; border-radius: 99px; 
+                font-weight: 800; font-size: 1rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4); 
+                text-transform: uppercase; cursor: pointer; flex-grow: 0;
             }
         }
-    });
+    </style>
+</head>
+<body>
 
-    /* ---------- Keep input focused ---------- */
-    document.addEventListener('click',(e)=>{
-        if(e.target===isbnInput || isbnInput.contains(e.target)) isbnInput.focus();
-    });
+    <header class="top-header">
+<div class="header-brand">
+            {% if system_settings.system_logo %}
+                <img src="{{ system_settings.system_logo.url }}" alt="Logo" 
+                     style="height: 35px; width: auto; object-fit: contain; margin-right: 10px;">
+            {% else %}
+                <span class="brand-orange">●</span>
+            {% endif %}
+                    <div class="brand-text-col">
+                        <span class="system-name">
+                            {{ system_settings.system_name|default:"Library System" }}<span class="brand-blue">POS</span>
+                        </span>
+                        <span class="terminal-info">{{ system_settings.system_tagline|default:"SUNRISE" }}</span>
+                    </div>
+                </div>
+        </div>
+        <div class="header-clock">
+            <div class="clock-time" id="clock-time">00:00 PM</div>
+            <div class="clock-date" id="clock-date">LOADING...</div>
+        </div>
+        <div class="header-controls">
+            <div class="user-info">
+                <span class="user-role">LIBRARIAN</span>
+                <span class="user-name">{{ user.username|default:"pos" }}</span>
+            </div>
+            <button class="power-btn" onclick="window.location.href='/logout'"><i class="fas fa-power-off"></i></button>
+        </div>
+    </header>
 
-    /* Expose modal close */
-    window.closeModal = closeModal;
-});
+    <div class="main-container">
+        
+        <div class="transaction-panel">
+            <form id="borrowForm" onsubmit="return false;">
+                {% csrf_token %}
+                <div class="search-area">
+                    <div class="mode-badge">
 
-</script>
+                    </div>
+                    <div class="search-wrapper">
+                        <input type="text" id="isbnInput" name="isbn" placeholder="SCAN OR ENTER ISBN..." autocomplete="off" autofocus>
+                    </div>
+                    <button type="submit" class="add-btn">ADD</button>
+                </div>
+            </form>
 
-</div>
-{% endblock %}
+            <div class="feedback-container">
+                <span id="isbnFeedback" class="feedback-text feedback-neutral"></span>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <span>ISBN</span>
+                    <span>Book Name</span>
+                    <span>Author</span>
+                    <span>Shelf</span>
+                    <span style="text-align: center;">Action</span>
+                </div>
+                
+                <div class="table-body" id="booksList">
+                    {% if books %}
+                        {% for book in books %}
+                        <div class="table-row" id="book-row-{{ book.id }}">
+                            <div class="table-cell cell-isbn">{{ book.isbn }}</div>
+                            <div class="table-cell cell-title">{{ book.title }}</div>
+                            <div class="table-cell">{{ book.author }}</div>
+                            <div class="table-cell">{{ book.shelf|default:"-" }}</div>
+                            <div class="table-cell" style="text-align: center;">
+                                <button class="remove-btn" onclick="removeBook('{{ book.id }}')">REMOVE</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-barcode"></i>
+                            <p>Scan a book to begin</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="panel-footer">
+                <div class="count-container">
+                    COUNT <span class="count-badge" id="totalBooks">{{ books|length|default:"0" }}</span>
+                </div>
+                <button type="button" class="mobile-borrow-btn" onclick="document.getElementById('confirmForm').submit()">BORROW</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-scroll-content">
+                <div class="profile-section">
+                    <div class="avatar">
+                        {% if student.profile_photo %}
+                            <img src="{{ student.profile_photo.url }}" alt="Avatar">
+                        {% else %}
+                            <span>{{ student.get_full_name|slice:":1" }}</span>
+                        {% endif %}
+                    </div>
+                    <h2 class="student-name">{{ student.get_full_name }}</h2>
+                    <div class="student-id">{{ student.student_id }}</div>
+                    <div class="course-pill">{{ student.course }}</div>
+                </div>
+
+                <div id="navToggle" class="section-toggle-header">
+                    Select Transaction Type <i class="fas fa-chevron-down"></i>
+                </div>
+                <div id="navContent" class="nav-content">
+                    <div class="nav-grid">
+                        <a href="{% url 'pos_borrow_book' %}?student_id={{ student.student_id }}" class="nav-btn active">
+                            <i class="fas fa-book-reader"></i><span class="nav-label">Borrow</span>
+                        </a>
+                        <a href="{% url 'pos_return_book' %}?student_id={{ student.student_id }}" class="nav-btn">
+                            <i class="fas fa-undo"></i><span class="nav-label">Return</span>
+                        </a>
+                        <a href="" onclick="window.location.reload(); return false;" class="nav-btn">
+                            <i class="fas fa-sync-alt"></i><span class="nav-label">Refresh</span>
+                        </a>
+                        <a href="{% url 'pos_home' %}" class="nav-btn">
+                            <i class="fas fa-user-plus"></i><span class="nav-label">New User</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="keypadToggle" class="section-toggle-header">
+                    Show Keypad <i class="fas fa-chevron-down"></i>
+                </div>
+                <div id="sideKeypad">
+                    <button class="key-btn" onclick="pressKey('1')">1</button>
+                    <button class="key-btn" onclick="pressKey('2')">2</button>
+                    <button class="key-btn" onclick="pressKey('3')">3</button>
+                    <button class="key-btn" onclick="pressKey('4')">4</button>
+                    <button class="key-btn" onclick="pressKey('5')">5</button>
+                    <button class="key-btn" onclick="pressKey('6')">6</button>
+                    <button class="key-btn" onclick="pressKey('7')">7</button>
+                    <button class="key-btn" onclick="pressKey('8')">8</button>
+                    <button class="key-btn" onclick="pressKey('9')">9</button>
+                    <button class="key-btn" onclick="pressKey('-')">-</button>
+                    <button class="key-btn" onclick="pressKey('0')">0</button>
+                    <button class="key-btn key-action" onclick="pressBackspace()"><i class="fas fa-backspace"></i></button>
+                    <button class="key-btn key-enter" onclick="pressEnter()">ADD ISBN</button>
+                </div>
+            </div>
+
+            <div class="sidebar-fixed-bottom">
+                <form method="post" id="confirmForm">
+                    {% csrf_token %}
+                    <button type="submit" name="confirm_borrow" class="big-action-btn">
+                        BORROW
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="errorModal">
+        <div class="modal-card">
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: #ef4444; margin-bottom: 1rem;">Error</h3>
+            <p id="modalMessage" style="color: #475569; margin-bottom: 1.5rem;">Something went wrong.</p>
+            <button onclick="document.getElementById('errorModal').style.display='none'" style="background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer;">CLOSE</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('navToggle');
+            const navContent = document.getElementById('navContent');
+            const keypadBtn = document.getElementById('keypadToggle');
+            const keypadContent = document.getElementById('sideKeypad');
+
+            // On Mobile: Collapse Nav by default to save space
+            if(window.innerWidth <= 768) { 
+                navContent.classList.add('collapsed'); 
+                toggleBtn.classList.add('collapsed'); 
+            }
+            
+            toggleBtn.addEventListener('click', () => {
+                navContent.classList.toggle('collapsed');
+                toggleBtn.classList.toggle('collapsed');
+            });
+            
+            if(keypadBtn) {
+                keypadBtn.addEventListener('click', () => {
+                    keypadContent.classList.toggle('collapsed');
+                    keypadBtn.classList.toggle('collapsed');
+                });
+            }
+
+            setInterval(updateClock, 1000); updateClock();
+        });
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock-time').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second:'2-digit' });
+            document.getElementById('clock-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+
+        const isbnInput = document.getElementById('isbnInput');
+        const isbnFeedback = document.getElementById('isbnFeedback');
+        const booksList = document.getElementById('booksList');
+        const totalBooksEl = document.getElementById('totalBooks');
+        const modal = document.getElementById('errorModal');
+        const modalMsg = document.getElementById('modalMessage');
+        const borrowForm = document.getElementById('borrowForm');
+
+        function getCSRFToken() { return document.querySelector('[name=csrfmiddlewaretoken]').value; }
+        function showModal(msg) { modalMsg.textContent = msg; modal.style.display = 'flex'; setTimeout(() => { modal.style.display = 'none'; }, 2000); }
+        function normalizeISBN(isbn) { return isbn.replace(/[^0-9Xx]/g,'').toUpperCase(); }
+
+        function pressKey(key) {
+            isbnInput.value += key;
+            isbnInput.dispatchEvent(new Event('input'));
+            isbnInput.focus();
+        }
+        function pressBackspace() {
+            isbnInput.value = isbnInput.value.slice(0, -1);
+            isbnInput.dispatchEvent(new Event('input'));
+            isbnInput.focus();
+        }
+        function pressEnter() {
+            const val = isbnInput.value.trim();
+            if(val) { addBook(val); isbnInput.value = ''; isbnInput.focus(); }
+        }
+
+        let validateTimer = null;
+        isbnInput.addEventListener('input', () => {
+            clearTimeout(validateTimer);
+            const raw = isbnInput.value.trim();
+            if(!raw) { isbnInput.classList.remove('valid', 'invalid'); isbnFeedback.textContent = ''; return; }
+            validateTimer = setTimeout(() => {
+                const isbn = normalizeISBN(raw);
+                fetch("{% url 'validate_book_isbn' %}?isbn=" + encodeURIComponent(isbn))
+                .then(res => res.json())
+                .then(data => {
+                    if(data.valid && !data.unavailable) {
+                        isbnInput.classList.remove('invalid'); isbnInput.classList.add('valid');
+                        isbnFeedback.textContent = data.book.title; isbnFeedback.className = 'feedback-text feedback-success';
+                    } else if (data.valid && data.unavailable) {
+                        isbnInput.classList.remove('valid'); isbnInput.classList.add('invalid');
+                        isbnFeedback.textContent = `${data.book.title} (Unavailable)`; isbnFeedback.className = 'feedback-text feedback-error';
+                    } else {
+                        isbnInput.classList.remove('valid'); isbnInput.classList.add('invalid');
+                        isbnFeedback.textContent = "Book not found"; isbnFeedback.className = 'feedback-text feedback-error';
+                    }
+                })
+                .catch(err => { isbnFeedback.textContent = "Checking..."; isbnFeedback.className = 'feedback-text feedback-neutral'; });
+            }, 300);
+        });
+
+        function renderRow(book) {
+            const empty = booksList.querySelector('.empty-state');
+            if(empty) empty.remove();
+            const div = document.createElement('div');
+            div.className = 'table-row'; div.id = `book-row-${book.id}`;
+            const shelfDisplay = (book.shelf && book.shelf !== "undefined" && book.shelf !== "null") ? book.shelf : "-";
+            div.innerHTML = `
+                <div class="table-cell cell-isbn">${book.isbn}</div>
+                <div class="table-cell cell-title">${book.title}</div>
+                <div class="table-cell">${book.author}</div>
+                <div class="table-cell">${shelfDisplay}</div>
+                <div class="table-cell" style="text-align: center;">
+                    <button class="remove-btn" onclick="removeBook('${book.id}')">REMOVE</button>
+                </div>`;
+            booksList.appendChild(div);
+            booksList.scrollTop = booksList.scrollHeight;
+        }
+
+        function addBook(isbn) {
+            if(!isbn) return;
+            isbnFeedback.textContent = ""; isbnInput.classList.remove('valid', 'invalid');
+            fetch(window.location.href, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded", "X-CSRFToken": getCSRFToken(), "X-Requested-With": "XMLHttpRequest" },
+                body: new URLSearchParams({ 'isbn': isbn, 'add_book': 'true' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.error) showModal(data.error);
+                else if(data.books) {
+                    booksList.innerHTML = '';
+                    if(data.books.length === 0) booksList.innerHTML = `<div class="empty-state"><i class="fas fa-barcode"></i><p>Scan a book to begin</p></div>`;
+                    else data.books.forEach(b => renderRow(b));
+                    totalBooksEl.textContent = data.books.length;
+                }
+            })
+            .catch(err => showModal("Connection Error"));
+        }
+
+        window.removeBook = function(bookId) {
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken(), 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=remove&book_id=${bookId}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.error) showModal(data.error);
+                else {
+                    const row = document.getElementById(`book-row-${bookId}`);
+                    if(row) row.remove();
+                    let current = parseInt(totalBooksEl.textContent) || 0;
+                    totalBooksEl.textContent = Math.max(0, current - 1);
+                    if(totalBooksEl.textContent == "0") booksList.innerHTML = `<div class="empty-state"><i class="fas fa-barcode"></i><p>Scan a book to begin</p></div>`;
+                }
+            })
+            .catch(err => showModal("Remove Failed"));
+        }
+
+        borrowForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = isbnInput.value.trim();
+            if(val) { addBook(val); isbnInput.value = ''; isbnInput.focus(); }
+        });
+
+        document.addEventListener('click', (e) => {
+            if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A' && !e.target.closest('.nav-btn') && !e.target.closest('.section-toggle-header') && !e.target.closest('#sideKeypad') && !e.target.closest('#keypadToggle')) {
+                isbnInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>
