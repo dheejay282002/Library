@@ -1,6 +1,6 @@
 ﻿# Library Management System
 
-Role-based Django library system for students, admins, librarians, and POS operators.
+Role-based Django library system for students, admins, and librarians.
 
 ## Full Documentation
 
