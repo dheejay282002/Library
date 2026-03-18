@@ -181,3 +181,6 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # DEFAULT AUTO FIELD
 # ---------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+#it's me, Dee Jay, your number one great and kind companion. Bobo man sa inyong pangingin, bobo ka din!
